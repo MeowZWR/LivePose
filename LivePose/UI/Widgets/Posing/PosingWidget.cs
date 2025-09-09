@@ -1,0 +1,126 @@
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
+using LivePose.Capabilities.Actor;
+using LivePose.Capabilities.Posing;
+using LivePose.UI.Controls.Editors;
+using LivePose.UI.Controls.Stateless;
+using LivePose.UI.Widgets.Core;
+using System.Numerics;
+
+namespace LivePose.UI.Widgets.Posing;
+
+public class PosingWidget(PosingCapability capability) : Widget<PosingCapability>(capability)
+{
+    public override string HeaderName => "Posing";
+
+    public override WidgetFlags Flags => Capability.Actor.IsProp ? (WidgetFlags.DefaultOpen | WidgetFlags.DrawBody) : (WidgetFlags.DrawBody | (Capability.GameObject.ObjectIndex < 2 ? WidgetFlags.HasAdvanced : WidgetFlags.None) | WidgetFlags.DefaultOpen);
+
+    private readonly PosingTransformEditor _posingTransformEditor = new();
+
+    private readonly BoneSearchControl _boneSearchEditor = new();
+
+
+    public override void DrawBody()
+    {
+        if(Capability.GameObject.ObjectIndex >= 2) {
+            ImGui.TextDisabled("Cannot edit other players with LivePose.");
+        } else {
+            DrawButtons();
+            ImGui.Separator();
+            DrawTransform();
+        }
+    }
+
+    private void DrawButtons()
+    {
+        if(Capability.Actor.TryGetCapability<ActionTimelineCapability>(out var timelineCapability) == false)
+        {
+            return;
+        }
+
+        var overlayOpen = Capability.OverlayOpen;
+        if(ImBrio.FontIconButton("overlay", overlayOpen ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye, overlayOpen ? "Close Overlay" : "Open Overlay"))
+        {
+            Capability.OverlayOpen = !overlayOpen;
+        }
+
+        ImGui.SameLine();
+
+        if(Capability.Actor.IsProp == false)
+        {
+            if(ImBrio.FontIconButton("import", FontAwesomeIcon.FileDownload, "Import Pose"))
+            {
+                ImGui.OpenPopup("DrawImportPoseMenuPopup");
+            }
+
+            FileUIHelpers.DrawImportPoseMenuPopup(Capability);
+
+            ImGui.SameLine();
+
+            if(ImBrio.FontIconButton("export", FontAwesomeIcon.Save, "Save Pose"))
+                FileUIHelpers.ShowExportPoseModal(Capability);
+
+            ImGui.SameLine();
+
+            if(ImBrio.FontIconButton("bone_search", FontAwesomeIcon.Search, "Bone Search"))
+            {
+                ImGui.OpenPopup("widget_bone_search_popup");
+            }
+        }
+
+        ImGui.SameLine();
+
+        if(ImBrio.FontIconButton("undo", FontAwesomeIcon.Backward, "Undo", Capability.CanUndo))
+        {
+            Capability.Undo();
+        }
+
+        ImGui.SameLine();
+
+        if(ImBrio.FontIconButton("redo", FontAwesomeIcon.Forward, "Redo", Capability.CanRedo))
+        {
+            Capability.Redo();
+        }
+
+        ImGui.SameLine();
+
+        if(Capability.Actor.IsProp == false)
+        {
+            if(ImBrio.ToggelFontIconButton("freezeActor", FontAwesomeIcon.Snowflake, new Vector2(0), timelineCapability.SpeedMultiplier == 0, hoverText: timelineCapability.SpeedMultiplierOverride == 0 ? "Un-Freeze Character" : "Freeze Character"))
+            {
+                if(timelineCapability.SpeedMultiplierOverride == 0)
+                    timelineCapability.ResetOverallSpeedOverride();
+                else
+                    timelineCapability.SetOverallSpeedOverride(0f);
+
+            }
+            ImGui.SameLine();
+        }
+
+        if(ImBrio.FontIconButtonRight("reset", FontAwesomeIcon.Undo, 1, "Reset Pose", Capability.HasOverride))
+        {
+            Capability.Reset(false, false, true);
+        }
+
+        using(var popup = ImRaii.Popup("widget_bone_search_popup", ImGuiWindowFlags.AlwaysAutoResize))
+        {
+            if(popup.Success)
+            {
+                _boneSearchEditor.Draw("widget_bone_search", Capability);
+            }
+        }
+    }
+
+    private void DrawTransform()
+    {
+        PosingEditorCommon.DrawSelectionName(Capability);
+
+        _posingTransformEditor.Draw("posing_widget_transform", Capability, true);
+    }
+
+    public override void ToggleAdvancedWindow()
+    {
+        UIManager.Instance.ToggleGraphicalPosingWindow();
+    }
+}

@@ -1,0 +1,219 @@
+﻿using Dalamud.Bindings.ImGui;
+using LivePose.Game.Types;
+using LivePose.Resources;
+using LivePose.UI.Controls.Stateless;
+using Lumina.Excel.Sheets;
+using System;
+using System.Collections.Generic;
+using System.Numerics;
+
+namespace LivePose.UI.Controls.Selectors;
+
+public class NpcSelector(string id) : Selector<NpcSelector.NpcSelectorEntry>(id)
+{
+    protected override Vector2 MinimumListSize { get; } = new(300, 300);
+
+    protected override float EntrySize => ImGui.GetTextLineHeight() * 3.2f;
+    protected virtual Vector2 IconSize => new(ImGui.GetTextLineHeight() * 3f);
+
+    protected override SelectorFlags Flags => SelectorFlags.AllowSearch | SelectorFlags.ShowOptions | SelectorFlags.AdaptiveSizing;
+
+    private bool showBNpcs = true;
+    private bool showENpcs = true;
+    private bool showMounts = true;
+    private bool showCompanions = true;
+    private bool showOrnaments = true;
+
+    protected override void PopulateList()
+    {
+        foreach(var (_, npc) in GameDataProvider.Instance.BNpcBases)
+        {
+            string name = $"B:{npc.RowId:D7}";
+            name = ResolveName(name);
+            AddItem(new NpcSelectorEntry(name, 0, npc));
+        }
+
+        foreach(var (_, npc) in GameDataProvider.Instance.ENpcBases)
+        {
+            string name = $"E:{npc.RowId:D7}";
+
+            var resident = GameDataProvider.Instance.ENpcResidents[npc.RowId];
+
+            if(!string.IsNullOrEmpty(resident.Singular.ToString()))
+                name = resident.Singular.ToString();
+
+            name = ResolveName(name);
+            AddItem(new NpcSelectorEntry(name, 0, npc));
+        }
+
+        foreach(var (_, mount) in GameDataProvider.Instance.Mounts)
+        {
+            AddItem(new NpcSelectorEntry(mount.Singular.ToString() ?? $"Mount {mount.RowId}", mount.Icon, mount));
+        }
+
+        foreach(var (_, companion) in GameDataProvider.Instance.Companions)
+        {
+            AddItem(new NpcSelectorEntry(companion.Singular.ToString() ?? $"Companion {companion.RowId}", companion.Icon, companion));
+        }
+
+        foreach(var (_, ornament) in GameDataProvider.Instance.Ornaments)
+        {
+            AddItem(new NpcSelectorEntry(ornament.Singular.ToString() ?? $"Ornament {ornament.RowId}", ornament.Icon, ornament));
+        }
+    }
+
+    private static string ResolveName(string name)
+    {
+        var names = ResourceProvider.Instance.GetResourceDocument<IReadOnlyDictionary<string, string>>("Data.NpcNames.json");
+
+        if(names.TryGetValue(name, out var nameOverride))
+            name = nameOverride;
+
+        if(name.StartsWith("N:"))
+        {
+            var nameId = uint.Parse(name.Substring(2));
+            if(GameDataProvider.Instance.BNpcNames.TryGetValue(nameId, out var nameRef))
+                if(!string.IsNullOrEmpty(nameRef.Singular.ToString()))
+                    name = nameRef.Singular.ToString();
+        }
+
+        return name;
+    }
+
+    protected override void DrawOptions()
+    {
+        if(ImGui.Checkbox("Battle NPCs", ref showBNpcs))
+            UpdateList();
+
+        ImGui.SameLine();
+
+        if(ImGui.Checkbox("Event NPCs", ref showENpcs))
+            UpdateList();
+
+        ImGui.SameLine();
+
+        if(ImGui.Checkbox("Mounts", ref showMounts))
+            UpdateList();
+
+        if(ImGui.Checkbox("Companions", ref showCompanions))
+            UpdateList();
+
+        ImGui.SameLine();
+
+        if(ImGui.Checkbox("Ornaments", ref showOrnaments))
+            UpdateList();
+    }
+
+    protected override void DrawItem(NpcSelectorEntry item, bool isHovered)
+    {
+        var details = item.Appearance.Match(
+            bnpc => $"Battle NPC: {bnpc.RowId}\nModel: {bnpc.ModelChara.RowId}",
+            enpc => $"Event NPC: {enpc.RowId}\nModel: {enpc.ModelChara.RowId}",
+            mount => $"Mount: {mount.RowId}\nModel: {mount.ModelChara.RowId}",
+            companion => $"Companion: {companion.RowId}\nModel: {companion.Model.RowId}",
+            ornament => $"Ornament: {ornament.RowId}\nModel: {ornament.Model}",
+            none => ""
+        );
+
+        ImBrio.BorderedGameIcon("icon", item.Icon, "Images.UnknownIcon.png", flags: ImGuiButtonFlags.None, size: IconSize);
+        ImGui.SameLine();
+        ImGui.Text($"{item.Name}\n{details}");
+    }
+
+    protected override bool Filter(NpcSelectorEntry item, string search)
+    {
+        bool shouldHide = item.Appearance.Match(
+            bnpc => !showBNpcs || bnpc.RowId == 0,
+            enpc => !showENpcs || enpc.RowId == 0,
+            mount => !showMounts || mount.ModelChara.RowId == 0,
+            companion => !showCompanions || companion.Model.RowId == 0,
+            ornament => !showOrnaments || ornament.Model == 0,
+            none => true
+        );
+
+        if(shouldHide)
+            return false;
+
+        string searchTerm = item.Appearance.Match(
+            bnpc => $"{item.Name} {bnpc.RowId} {bnpc.ModelChara.RowId}",
+            enpc => $"{item.Name} {enpc.RowId} {enpc.ModelChara.RowId}",
+            mount => $"{item.Name} {mount.RowId} {mount.ModelChara.RowId}",
+            companion => $"{item.Name} {companion.RowId} {companion.Model.RowId}",
+            ornament => $"{item.Name} {ornament.RowId} {ornament.Model}",
+            none => ""
+        );
+
+        if(searchTerm.Contains(search, StringComparison.InvariantCultureIgnoreCase))
+            return true;
+
+        return false;
+    }
+
+    protected override int Compare(NpcSelectorEntry itemA, NpcSelectorEntry itemB)
+    {
+        // Mounts
+        if(itemA?.Appearance?.Value is Mount && itemB?.Appearance?.Value is not Mount)
+            return -1;
+        if(itemA?.Appearance?.Value is not Mount && itemB?.Appearance?.Value is Mount)
+            return 1;
+
+        // Companions
+        if(itemA?.Appearance?.Value is Companion && itemB?.Appearance?.Value is not Companion)
+            return -1;
+        if(itemA?.Appearance?.Value is not Companion && itemB?.Appearance?.Value is Companion)
+            return 1;
+
+        // Event NPCs
+        if(itemA?.Appearance?.Value is ENpcBase && itemB?.Appearance?.Value is not ENpcBase)
+            return -1;
+        if(itemA?.Appearance?.Value is not ENpcBase && itemB?.Appearance?.Value is ENpcBase)
+            return 1;
+
+        // Battle NPCs
+        if(itemA?.Appearance?.Value is BNpcBase && itemB?.Appearance?.Value is not BNpcBase)
+            return -1;
+        if(itemA?.Appearance?.Value is not BNpcBase && itemB?.Appearance?.Value is BNpcBase)
+            return 1;
+
+        // Ornaments
+        if(itemA?.Appearance?.Value is Ornament && itemB?.Appearance?.Value is not Ornament)
+            return -1;
+        if(itemA?.Appearance?.Value is not Ornament && itemB?.Appearance?.Value is Ornament)
+            return 1;
+
+        string nameA = itemA?.Name ?? string.Empty;
+        string nameB = itemB?.Name ?? string.Empty;
+
+        try
+        {
+            // Move unknown names down
+            string[] prefixes = ["B:", "E:", "N:"];
+            for(int i = 0; i < prefixes.Length; i++)
+            {
+                var prefix = prefixes[i];
+                bool aHas = nameA.StartsWith(prefix, StringComparison.Ordinal);
+                bool bHas = nameB.StartsWith(prefix, StringComparison.Ordinal);
+                if(aHas && !bHas)
+                    return 1;
+                if(!aHas && bHas)
+                    return 1;
+            }
+
+            // Blank string to bottom
+            if(string.IsNullOrWhiteSpace(nameA) && !string.IsNullOrWhiteSpace(nameB))
+                return 1;
+
+            if(!string.IsNullOrWhiteSpace(nameA) && string.IsNullOrWhiteSpace(nameB))
+                return -1;
+
+            // Alphabetical
+            return string.Compare(nameA, nameB, StringComparison.InvariantCultureIgnoreCase);
+        }
+        catch
+        {
+            return 0; // Fallback to equality
+        }
+    }
+
+    public record class NpcSelectorEntry(string Name, uint Icon, ActorAppearanceUnion Appearance);
+}
