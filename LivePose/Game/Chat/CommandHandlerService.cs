@@ -54,9 +54,6 @@ public class CommandHandlerService : IDisposable
                 }
                 
                 break;
-            case "window":
-                _uiManager.ToggleMainWindow();
-                break;
 
             case "settings":
                 _uiManager.ToggleSettingsWindow();

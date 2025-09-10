@@ -3,7 +3,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using LivePose.Config;
-using LivePose.IPC;
 using LivePose.UI.Controls.Stateless;
 using System.Numerics;
 
@@ -38,8 +37,7 @@ public class SettingsWindow : Window
         Flags = ImGuiWindowFlags.NoResize;
         _isModal = false;
     }
-
-    int selected;
+    
     public override void Draw()
     {
         using(ImRaii.PushId("livepose_settings"))
@@ -54,45 +52,10 @@ public class SettingsWindow : Window
             }
             else
             {
-                ImBrio.ToggleButtonStrip("settings_filters_selector", new Vector2(ImBrio.GetRemainingWidth(), ImBrio.GetLineHeight()), ref selected, ["General", "Posing", "Advanced"]);
 
-                using(var child = ImRaii.Child("###settingsPane"))
-                {
-                    if(child.Success)
-                    {
-                        switch(selected)
-                        {
-                            case 0:
-                                DrawGeneralTab();
-                                break;
-                            case 1:
-                                DrawPosingTab();
-                                break;
-                            case 2:
-                                DrawAdvancedTab();
-                                break;
-                        }
-                    }
-                }
+                DrawPosingTab();
+                DrawAdvancedTab();
             }
-        }
-    }
-
-    private void DrawGeneralTab()
-    {
-        if(ImGui.CollapsingHeader("Display", ImGuiTreeNodeFlags.DefaultOpen))
-        {
-            DrawDisplaySettings();
-        }
-    }
-
-    private void DrawDisplaySettings()
-    {
-        bool censorActorNames = _configurationService.Configuration.Interface.CensorActorNames;
-        if(ImGui.Checkbox("Censor Actor Names", ref censorActorNames))
-        {
-            _configurationService.Configuration.Interface.CensorActorNames = censorActorNames;
-            _configurationService.ApplyChange();
         }
     }
     
@@ -148,10 +111,20 @@ public class SettingsWindow : Window
                 _configurationService.ApplyChange();
             }
 
-            float circleSize = _configurationService.Configuration.Posing.BoneCircleSize;
-            if(ImGui.DragFloat("Circle Size", ref circleSize, 0.01f, 0.01f, 20f))
+            float circleSize = _configurationService.Configuration.Posing.BoneCircleDisplaySize;
+            if(ImGui.DragFloat("Circle Size (Display)", ref circleSize, 0.01f, 0.01f, 20f))
             {
-                _configurationService.Configuration.Posing.BoneCircleSize = circleSize;
+                if (circleSize > _configurationService.Configuration.Posing.BoneCircleClickSize) _configurationService.Configuration.Posing.BoneCircleClickSize = circleSize;
+                
+                _configurationService.Configuration.Posing.BoneCircleDisplaySize = circleSize;
+                _configurationService.ApplyChange();
+            }            
+
+            float circleSizeClick = _configurationService.Configuration.Posing.BoneCircleClickSize;
+            if(ImGui.DragFloat("Circle Size (Click)", ref circleSizeClick, 0.01f, 0.01f, 20f))
+            {
+                if (circleSizeClick < _configurationService.Configuration.Posing.BoneCircleDisplaySize) circleSizeClick = _configurationService.Configuration.Posing.BoneCircleDisplaySize;
+                _configurationService.Configuration.Posing.BoneCircleClickSize = circleSizeClick;
                 _configurationService.ApplyChange();
             }
 
@@ -217,23 +190,22 @@ public class SettingsWindow : Window
             }
         }
     }
-
-    bool resetSettings = false;
+    
     private void DrawAdvancedTab()
     {
 
-        if(ImGui.CollapsingHeader("LivePose", ImGuiTreeNodeFlags.DefaultOpen))
+        if(ImGui.IsWindowAppearing()) ImGui.SetNextItemOpen(false);
+        if(ImGui.CollapsingHeader("Reset Settings"))
         {
-            ImGui.Checkbox("Enable [ Reset Settings to Default ] Button", ref resetSettings);
-
-            using(ImRaii.Disabled(!resetSettings))
+            using(ImRaii.Disabled(!ImGui.GetIO().KeyShift))
             {
                 if(ImGui.Button("Reset Settings to Default", new(170, 0)))
                 {
                     _configurationService.Reset();
-                    resetSettings = false;
                 }
             }
+            
+            ImGui.TextDisabled("Hold SHIFT to confirm.");
         }
     }
 }

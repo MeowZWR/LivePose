@@ -36,13 +36,6 @@ public static class PosingEditorCommon
                     ImGui.Text("This bone's transform values are frozen.");
                 }
             }
-            else
-            {
-                if(posing.ModelPosing.Freeze)
-                {
-                    ImGui.Text("This actor's transform values are frozen.");
-                }
-            }
         }
     }
 

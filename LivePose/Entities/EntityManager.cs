@@ -4,9 +4,6 @@ using LivePose.Capabilities.Core;
 using LivePose.Config;
 using LivePose.Entities.Actor;
 using LivePose.Entities.Core;
-using LivePose.Entities.Debug;
-using LivePose.Entities.World;
-using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -19,7 +16,7 @@ public unsafe partial class EntityManager(IServiceProvider serviceProvider, Conf
 {
     private readonly IServiceProvider _serviceProvider = serviceProvider;
 
-    public Entity? RootEntity => _worldEntity;
+    public Entity? RootEntity => null;
 
     private readonly List<EntityId> _selectedEntities = [];
 
@@ -42,31 +39,10 @@ public unsafe partial class EntityManager(IServiceProvider serviceProvider, Conf
             return null;
         }
     }
-
-    private WorldEntity? _worldEntity;
+    
     private readonly Dictionary<EntityId, Entity> _entityMap = [];
 
     private readonly ConfigurationService _configurationService = configurationService;
-
-    public void SetupDefaultEntities()
-    {
-        _worldEntity = ActivatorUtilities.CreateInstance<WorldEntity>(_serviceProvider);
-        _entityMap[_worldEntity.Id] = _worldEntity;
-
-        RefreshDebugEntity();
-
-        // var environmentEntity = ActivatorUtilities.CreateInstance<EnvironmentEntity>(_serviceProvider);
-        // AttachEntity(environmentEntity, _worldEntity);
-
-        /*
-        var cameraContainerEntity = ActivatorUtilities.CreateInstance<CameraContainerEntity>(_serviceProvider);
-        AttachEntity(cameraContainerEntity, _worldEntity);
-
-        var defaultCameraEntity = ActivatorUtilities.CreateInstance<CameraEntity>(_serviceProvider, 0, CameraType.Default);
-        defaultCameraEntity.VirtualCamera.SaveCameraState();
-        AttachEntity(defaultCameraEntity, cameraContainerEntity);
-        */
-    }
 
     public void AttachEntity(Entity entity, Entity? parent, bool autoDetach = false)
     {
@@ -276,22 +252,6 @@ public unsafe partial class EntityManager(IServiceProvider serviceProvider, Conf
         }
 
         return results.Count != 0;
-    }
-
-    private void RefreshDebugEntity()
-    {
-        if(_configurationService.IsDebug)
-        {
-            var debugEntity = ActivatorUtilities.CreateInstance<DebugEntity>(_serviceProvider);
-            AttachEntity(debugEntity, _worldEntity);
-        }
-        else
-        {
-            if(TryGetEntity(DebugEntity.FixedId, out var entity))
-            {
-                DetachEntity(entity, true);
-            }
-        }
     }
 
     public void Dispose()

@@ -15,11 +15,11 @@ public class HistoryService(EntityManager entityManager)
     private readonly Stack<GroupEntry> _undo = [];
     private readonly Stack<GroupEntry> _redo = [];
 
-    public void Snapshot(IEnumerable<(EntityId id, PoseInfo info, Transform model)> entries)
+    public void Snapshot(IEnumerable<(EntityId id, PoseInfo info)> entries)
     {
         var group = new GroupEntry
         {
-            Entries = [.. entries.Select(e => new HistoryEntry(e.id, e.info.Clone(), e.model))]
+            Entries = [.. entries.Select(e => new HistoryEntry(e.id, e.info.Clone()))]
         };
 
         _undo.Push(group);
@@ -46,11 +46,10 @@ public class HistoryService(EntityManager entityManager)
                 continue;
 
             // save current as inverse
-            inverse.Entries.Add(new HistoryEntry(e.Id, cap.SkeletonPosing.PoseInfo.Clone(), cap.ModelPosing.Transform));
+            inverse.Entries.Add(new HistoryEntry(e.Id, cap.SkeletonPosing.PoseInfo.Clone()));
 
             // apply stored
             cap.SkeletonPosing.PoseInfo = e.Info.Clone();
-            cap.ModelPosing.Transform = e.ModelTransform;
 
             if(cap.GameObject.ObjectIndex == 0) {
                 if(LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
@@ -80,10 +79,9 @@ public class HistoryService(EntityManager entityManager)
             if(!entity.TryGetCapability<PosingCapability>(out var cap))
                 continue;
 
-            inverse.Entries.Add(new HistoryEntry(e.Id, cap.SkeletonPosing.PoseInfo.Clone(), cap.ModelPosing.Transform));
+            inverse.Entries.Add(new HistoryEntry(e.Id, cap.SkeletonPosing.PoseInfo.Clone()));
 
             cap.SkeletonPosing.PoseInfo = e.Info.Clone();
-            cap.ModelPosing.Transform = e.ModelTransform;
             
             if(cap.GameObject.ObjectIndex == 0) {
                 if(LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
@@ -106,5 +104,5 @@ public class HistoryService(EntityManager entityManager)
         public List<HistoryEntry> Entries = [];
     }
 
-    private record class HistoryEntry(EntityId Id, PoseInfo Info, Transform ModelTransform);
+    private record class HistoryEntry(EntityId Id, PoseInfo Info);
 }

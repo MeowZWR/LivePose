@@ -40,10 +40,8 @@ public class PosingTransformEditor
                 }
                 else
                 {
-                    using(ImRaii.Disabled())
-                    {
-                        DrawModelTransformEditor(posingCapability, compactMode);
-                    }
+ 
+                    
                    
                 }
 
@@ -107,17 +105,6 @@ public class PosingTransformEditor
                     using(ImRaii.Disabled(true))
                         if(ImBrio.FontIconButton("copypaste", FontAwesomeIcon.Clipboard, "Copy/Paste"))
                             ImGui.OpenPopup("transform_CopyPaste_popup");
-
-                    if(isBone == false)
-                        using(ImRaii.Disabled(posingCapability.ModelPosing.HasOverride == false))
-                        {
-                            ImGui.SameLine();
-
-                            if(ImBrio.FontIconButtonRight("resetTransform", FontAwesomeIcon.Recycle, 1, tooltip: "Reset Model Transform"))
-                            {
-                                posingCapability.ModelPosing.ResetTransform();
-                            }
-                        }
 
                     using(var popup = ImRaii.Popup("transform_CopyPaste_popup"))
                     {
@@ -194,73 +181,7 @@ public class PosingTransformEditor
             }
         }
     }
-
-    private void DrawModelTransformEditor(PosingCapability posingCapability, bool compactMode = false)
-    {
-        var before = posingCapability.ModelPosing.Transform;
-        var isProp = posingCapability.Actor.IsProp;
-        var offset = posingCapability.ModelPosing.TransformOffset;
-        var realTransform = _trackingTransform ?? before;
-        var realEuler = _trackingEuler ?? before.Rotation.ToEuler();
-
-        using(ImRaii.Disabled(posingCapability.ModelPosing.Freeze == true))
-        {
-            bool didChange = false;
-            bool anyActive = false;
-
-            (var pdidChange, var panyActive) = ImBrio.DragFloat3($"###_transformPosition_1", ref realTransform.Position, offset, FontAwesomeIcon.ArrowsUpDownLeftRight, "Position", enableExpanded: compactMode);
-            (var rdidChange, var ranyActive) = ImBrio.DragFloat3($"###_transformRotation_1", ref realEuler, offset * 100, FontAwesomeIcon.ArrowsSpin, "Rotation", enableExpanded: compactMode);
-
-            bool sdidChange = false;
-            bool sanyActive = false;
-
-            if(isProp)
-            {
-                ImBrio.Icon(FontAwesomeIcon.ExpandAlt);
-
-                ImGui.SameLine();
-
-                Vector2 size = new(0, 0)
-                {
-                    X = ImBrio.GetRemainingWidth() + ImGui.GetStyle().ItemSpacing.X
-                };
-
-                float entryWidth = (size.X - (ImGui.GetStyle().ItemSpacing.X * 2));
-                ImGui.SetNextItemWidth(entryWidth);
-
-                (sanyActive, sdidChange) = ImBrio.DragFloat($"##transformScale", ref realTransform.Scale.X, offset / 10);
-            }
-            else
-                (sdidChange, sanyActive) = ImBrio.DragFloat3($"###_transformScale_1", ref realTransform.Scale, offset, FontAwesomeIcon.ExpandAlt, "Scale", enableExpanded: compactMode);
-
-            didChange |= pdidChange |= rdidChange |= sdidChange;
-            anyActive |= panyActive |= ranyActive |= sanyActive;
-
-            realTransform.Rotation = realEuler.ToQuaternion();
-
-            if(didChange)
-            {
-                posingCapability.ModelPosing.Transform = realTransform;
-            }
-
-            if(anyActive)
-            {
-                _trackingTransform = realTransform;
-                _trackingEuler = realEuler;
-            }
-            else
-            {
-                if(_trackingEuler.HasValue || _trackingTransform.HasValue)
-                {
-                    posingCapability.Snapshot(false, false);
-                }
-
-                _trackingTransform = null;
-                _trackingEuler = null;
-            }
-        }
-    }
-
+    
     private static void DrawCopyPastePopup()
     {
         if(ImGui.Button("Copy"))
@@ -291,19 +212,6 @@ public class PosingTransformEditor
         }
     }
 
-    private static void DrawTransformModelOffset(PosingCapability posingCapability)
-    {
-        using var popup = ImRaii.Popup("transformOffset");
-        if(popup.Success)
-        {
-            ImBrio.DragFloat($"##transformSpeed_1", ref posingCapability.ModelPosing.TransformOffset, 0.001f, 10, 0.01f, "Offset", 50);
-            bool freezeTransforms = posingCapability.ModelPosing.Freeze;
-            if(ImGui.Checkbox("Freeze Transforms", ref freezeTransforms))
-            {
-                posingCapability.ModelPosing.Freeze = freezeTransforms;
-            }
-        }
-    }
     private unsafe static void DrawTransformOffset(PosingCapability posingCapability)
     {
         BonePoseInfoId? selectedIsBone = posingCapability.IsSelectedBone();
@@ -311,10 +219,6 @@ public class PosingTransformEditor
         if(selectedIsBone.HasValue && !posingCapability.Actor.IsProp)
         {
             DrawTransformBoneOffset(posingCapability, selectedIsBone.Value);
-        }
-        else
-        {
-            DrawTransformModelOffset(posingCapability);
         }
     }
 

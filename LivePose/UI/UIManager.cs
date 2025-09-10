@@ -20,8 +20,7 @@ public class UIManager : IDisposable
     private readonly IDalamudPluginInterface _pluginInterface;
     private readonly GPoseService _gPoseService;
     private readonly ConfigurationService _configurationService;
-
-    private readonly MainWindow _mainWindow;
+    
     private readonly SettingsWindow _settingsWindow;
     private readonly LibraryWindow _libraryWindow;
     private readonly PosingOverlayWindow _overlayWindow;
@@ -56,8 +55,6 @@ public class UIManager : IDisposable
             ConfigurationService configurationService,
             ITextureProvider textureProvider,
             IToastGui toast,
-            IFramework framework,
-            MainWindow mainWindow,
             SettingsWindow settingsWindow,
             LibraryWindow libraryWindow,
             PosingOverlayWindow overlayWindow,
@@ -73,8 +70,7 @@ public class UIManager : IDisposable
         _configurationService = configurationService;
         _textureProvider = textureProvider;
         _toastGui = toast;
-
-        _mainWindow = mainWindow;
+        
         _settingsWindow = settingsWindow;
         _libraryWindow = libraryWindow;
         _overlayWindow = overlayWindow;
@@ -83,8 +79,7 @@ public class UIManager : IDisposable
         _graphicalWindow = graphicalWindow;
 
         _windowSystem = new(LivePose.Name);
-
-        _windowSystem.AddWindow(_mainWindow);
+        
         _windowSystem.AddWindow(_settingsWindow);
         _windowSystem.AddWindow(_libraryWindow);
         _windowSystem.AddWindow(_overlayWindow);
@@ -108,18 +103,12 @@ public class UIManager : IDisposable
     {
         _settingsWindow.IsOpen = true;
     }
-
-    public void ShowMainWindow()
-    {
-        _mainWindow.IsOpen = true;
-    }
-
+    
     public void NotifyError(string message)
     {
         _toastGui.ShowError(message);
     }
-
-    public void ToggleMainWindow() => _mainWindow.IsOpen = !_mainWindow.IsOpen;
+    
     public void ToggleSettingsWindow() => _settingsWindow.IsOpen = !_settingsWindow.IsOpen;
     
     private void DrawUI() {
@@ -154,9 +143,6 @@ public class UIManager : IDisposable
     {
         _pluginInterface.UiBuilder.Draw -= DrawUI;
         _pluginInterface.UiBuilder.OpenConfigUi -= ShowSettingsWindow;
-        _pluginInterface.UiBuilder.OpenMainUi -= ShowMainWindow;
-
-        _mainWindow.Dispose();
 
         _windowSystem.RemoveAllWindows();
 

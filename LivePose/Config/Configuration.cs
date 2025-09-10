@@ -12,9 +12,6 @@ public class Configuration : IPluginConfiguration
     // First Time User
     public int PopupKey { get; set; } = -1;
 
-    // Interface
-    public InterfaceConfiguration Interface { get; set; } = new InterfaceConfiguration();
-
     // Posing
     public PosingConfiguration Posing { get; set; } = new PosingConfiguration();
 

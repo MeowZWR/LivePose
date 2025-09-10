@@ -36,7 +36,7 @@ public class PosingOverlayWindow : Window, IDisposable
     private List<ClickableItem> _selectingFrom = [];
     private Transform? _trackingTransform;
     private readonly PosingTransformEditor _posingTransformEditor = new();
-    private List<(EntityId id, PoseInfo info, Transform model)>? _groupedPendingSnapshot = null;
+    private List<(EntityId id, PoseInfo info)>? _groupedPendingSnapshot = null;
 
     private const int _gizmoId = 142857;
     private const string _boneSelectPopupName = "livepose_bone_select_popup";
@@ -121,18 +121,7 @@ public class PosingOverlayWindow : Window, IDisposable
         var camera = (BrioCamera*) CameraManager.Instance()->GetActiveCamera();
         if(camera == null)
             return;
-
-        // Model Transform
-        if(camera->WorldToScreen(posing.ModelPosing.Transform.Position, out var modelScreen))
-        {
-            clickables.Add(new ClickableItem
-            {
-                Item = PosingSelectionType.ModelTransform,
-                ScreenPosition = modelScreen,
-                Size = config.BoneCircleSize,
-            });
-        }
-
+        
         // Bone Transforms
         if(posing.Actor.IsProp == false)
         {
@@ -166,7 +155,8 @@ public class PosingOverlayWindow : Window, IDisposable
                         {
                             Item = posing.SkeletonPosing.GetBonePose(bone).Id,
                             ScreenPosition = boneScreen,
-                            Size = config.BoneCircleSize,
+                            Size = config.BoneCircleDisplaySize,
+                            ClickSize = config.BoneCircleClickSize,
                         });
 
                         if(bone.Parent != null)
@@ -205,8 +195,8 @@ public class PosingOverlayWindow : Window, IDisposable
         foreach(var clickable in clickables)
         {
             if (clickable.Item == PosingSelectionType.ModelTransform) continue;
-            var start = new Vector2(clickable.ScreenPosition.X - clickable.Size, clickable.ScreenPosition.Y - clickable.Size);
-            var end = new Vector2(clickable.ScreenPosition.X + clickable.Size, clickable.ScreenPosition.Y + clickable.Size);
+            var start = new Vector2(clickable.ScreenPosition.X - clickable.ClickSize, clickable.ScreenPosition.Y - clickable.ClickSize);
+            var end = new Vector2(clickable.ScreenPosition.X + clickable.ClickSize, clickable.ScreenPosition.Y + clickable.ClickSize);
             if(ImGui.IsMouseHoveringRect(start, end))
             {
                 hovered.Add(clickable);
@@ -321,9 +311,27 @@ public class PosingOverlayWindow : Window, IDisposable
             {
                 float thickness = config.SkeletonLineThickness;
                 uint color = uiState.SkeletonLinesEnabled ? config.SkeletonLineActiveColor : config.SkeletonLineInactiveColor;
-                ImGui.GetWindowDrawList().AddLine(clickable.ParentScreenPosition.Value, clickable.ScreenPosition, color, thickness);
+
+
+
+                if(Vector2.DistanceSquared(clickable.ParentScreenPosition.Value, clickable.ScreenPosition) >= clickable.Size * clickable.Size) {
+                    ImGui.GetWindowDrawList().AddLine(
+                        PointAlongLine(clickable.ParentScreenPosition.Value, clickable.ScreenPosition, clickable.Size),
+                        PointAlongLine(clickable.ScreenPosition, clickable.ParentScreenPosition.Value, clickable.Size),
+                        color, thickness
+                    );
+                }
+                
+        
             }
         }
+    }
+    
+    private static Vector2 PointAlongLine(Vector2 start, Vector2 end, float distance)
+    {
+        Vector2 direction = end - start;
+        Vector2 unit = Vector2.Normalize(direction);
+        return start + unit * distance;
     }
 
     private void DrawSkeletonDots(OverlayUIState uiState, PosingConfiguration config, List<ClickableItem> clickables)
@@ -409,7 +417,6 @@ public class PosingOverlayWindow : Window, IDisposable
             },
             _ =>
             {
-                currentTransform = posing.ModelPosing.Transform;
                 return true;
             },
             _ => false
@@ -434,7 +441,7 @@ public class PosingOverlayWindow : Window, IDisposable
 
         if(ImGuizmoExtensions.MouseWheelManipulate(ref lastMatrix))
         {
-            if(!posing.ModelPosing.Freeze && !(selectedBone != null && selectedBone.Freeze))
+            if(!(selectedBone != null && selectedBone.Freeze))
             {
                 newTransform = lastMatrix.ToTransform();
                 _trackingTransform = newTransform;
@@ -449,9 +456,9 @@ public class PosingOverlayWindow : Window, IDisposable
             ref lastMatrix.M11
         ))
         {
-            if(!posing.ModelPosing.Freeze && !(selectedBone != null && selectedBone.Freeze))
+            if(!(selectedBone != null && selectedBone.Freeze))
             {
-                if(!posing.ModelPosing.Freeze && !(selectedBone != null && selectedBone.Freeze))
+                if(!(selectedBone != null && selectedBone.Freeze))
                 {
                     newTransform = lastMatrix.ToTransform();
                     _trackingTransform = newTransform;
@@ -496,7 +503,7 @@ public class PosingOverlayWindow : Window, IDisposable
                 {
                     if(_groupedPendingSnapshot == null && ImGuizmo.IsUsing())
                     {
-                        var list = new List<(EntityId, PoseInfo, Transform)>();
+                        var list = new List<(EntityId, PoseInfo)>();
                         foreach(var id in _entityManager.SelectedEntityIds)
                         {
                             if(!_entityManager.TryGetEntity(id, out var ent))
@@ -505,7 +512,7 @@ public class PosingOverlayWindow : Window, IDisposable
                             if(!ent.TryGetCapability<PosingCapability>(out var cap))
                                 continue;
 
-                            list.Add((id, cap.SkeletonPosing.PoseInfo.Clone(), cap.ModelPosing.Transform));
+                            list.Add((id, cap.SkeletonPosing.PoseInfo.Clone()));
                         }
                         _groupedPendingSnapshot = list;
                     }
@@ -517,11 +524,6 @@ public class PosingOverlayWindow : Window, IDisposable
 
                         if(!ent.TryGetCapability<PosingCapability>(out var cap))
                             continue;
-
-                        if(cap.ModelPosing.Freeze)
-                            continue;
-
-                        cap.ModelPosing.Transform += delta;
                     }
                 },
                 _ => { }
@@ -576,6 +578,7 @@ public class PosingOverlayWindow : Window, IDisposable
         public Vector2? ParentScreenPosition = null;
 
         public float Size;
+        public float ClickSize;
         public bool CurrentlySelected;
         public bool CurrentlyHovered;
         public bool WasClicked;

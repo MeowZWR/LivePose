@@ -175,10 +175,8 @@ public class LibraryManager : IDisposable
                 {
                     string path = paths[0];
                     object? result;
-                    if(loadMessagePack)
-                        result = MessagePackSerializer.Deserialize<SceneFile>(File.ReadAllBytes(path));
-                    else
-                        result = _fileService.Load(path);
+                    
+                    result = _fileService.Load(path);
 
                     if(result is null)
                         return;

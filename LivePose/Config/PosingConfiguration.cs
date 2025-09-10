@@ -6,7 +6,8 @@ public class PosingConfiguration
 {
     // Overlay
     public bool AllowGizmoAxisFlip { get; set; } = true;
-    public float BoneCircleSize { get; set; } = 6.300f;
+    public float BoneCircleDisplaySize { get; set; } = 5f;
+    public float BoneCircleClickSize { get; set; } = 7.5f;
     public uint BoneCircleNormalColor { get; set; } = 0xFFFFFFFF;
     public uint BoneCircleInactiveColor { get; set; } = 0x55555555;
     public uint BoneCircleHoveredColor { get; set; } = 0xFFFF0073;

@@ -180,10 +180,10 @@ public class PosingOverlayToolbarWindow : Window
         
         ImGui.SameLine();
 
-        using(ImRaii.PushColor(ImGuiCol.Text, _overlayTransformWindow.IsOpen ? UIConstants.ToggleButtonActive : UIConstants.ToggleButtonInactive))
+        using(ImRaii.PushColor(ImGuiCol.Text, _graphicalWindow.IsOpen ? UIConstants.ToggleButtonActive : UIConstants.ToggleButtonInactive))
         {
             using(ImRaii.PushFont(UiBuilder.IconFont)) {
-                if(ImGui.Button($"{FontAwesomeIcon.LocationCrosshairs.ToIconString()}###toggle_advanced_window", new Vector2(buttonOperationSize)))
+                if(ImGui.Button($"{FontAwesomeIcon.PersonThroughWindow.ToIconString()}###toggle_advanced_window", new Vector2(buttonOperationSize)))
                     _graphicalWindow.IsOpen = !_graphicalWindow.IsOpen;
             }
         }
@@ -341,6 +341,9 @@ public class PosingOverlayToolbarWindow : Window
         if(_entityManager.TryGetCapabilityFromSelectedEntity<ActionTimelineCapability>(out var timelineCapability)) {
             ImGui.SameLine();
 
+
+
+            using(ImRaii.PushColor(ImGuiCol.Text, timelineCapability.SpeedMultiplierOverride == 0 ? UIConstants.ToggleButtonActive : UIConstants.ToggleButtonInactive)) 
             using(ImRaii.PushFont(UiBuilder.IconFont)) {
                 if(ImGui.Button($"{FontAwesomeIcon.Snowflake.ToIconString()}###freeze_toggle", new Vector2(buttonSize))) {
                     if(timelineCapability.SpeedMultiplierOverride == 0) {
@@ -348,12 +351,13 @@ public class PosingOverlayToolbarWindow : Window
                     } else {
                         timelineCapability.SetOverallSpeedOverride(0);
                     }
-                    
+
                     if(timelineCapability.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
                         service.SetPlayerPoseTag();
                     }
                 }
             }
+            
 
             if(ImGui.IsItemHovered())
                 ImGui.SetTooltip($"{(timelineCapability.SpeedMultiplierOverride == 0 ? "Un-" : "")}Freeze Character");

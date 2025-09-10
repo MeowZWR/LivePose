@@ -52,7 +52,6 @@ public class LibraryWindow : Window
 
     private readonly SearchQueryFilter _searchFilter = new();
     private readonly LibraryFavoritesFilter _favoritesFilter;
-    private readonly TypeFilter _charactersFilter;
     private readonly TypeFilter _posesFilter;
 
     private List<GroupEntryBase> _lastPathModalPose = [];
@@ -130,7 +129,6 @@ public class LibraryWindow : Window
         _gPoseService.OnGPoseStateChange += OnGPoseStateChange;
 
         _favoritesFilter = new LibraryFavoritesFilter(configurationService);
-        _charactersFilter = new TypeFilter("Characters", typeof(AnamnesisCharaFile), typeof(ActorAppearanceUnion));
         _posesFilter = new TypeFilter("Poses", typeof(PoseFile), typeof(CMToolPoseFile));
         _selectedFilter = _favoritesFilter;
     }
@@ -553,13 +551,9 @@ public class LibraryWindow : Window
             if(_favoritesFilter == _selectedFilter)
                 selected = 0;
 
-            ops.Add(_charactersFilter.Name);
-            if(_charactersFilter == _selectedFilter)
-                selected = 1;
-
             ops.Add(_posesFilter.Name);
             if(_posesFilter == _selectedFilter)
-                selected = 2;
+                selected = 1;
 
 
             if(ImBrio.ToggleButtonStrip("library_filters_selector", new(ImBrio.GetRemainingWidth(), ImBrio.GetLineHeight()), ref selected, [.. ops]))
@@ -569,10 +563,6 @@ public class LibraryWindow : Window
                     _selectedFilter = _favoritesFilter;
                 }
                 else if(selected == 1)
-                {
-                    _selectedFilter = _charactersFilter;
-                }
-                else if(selected == 2)
                 {
                     _selectedFilter = _posesFilter;
                 }

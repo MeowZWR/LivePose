@@ -25,7 +25,7 @@ namespace LivePose.Entities.Actor
             {
                 if(string.IsNullOrEmpty(RawName))
                 {
-                    return _configService.Configuration.Interface.CensorActorNames ? GameObject.GetCensoredName() : GameObject.GetFriendlyName();
+                    return GameObject.GetFriendlyName();
                 }
 
                 return GameObject.GetAsCustomName(RawName);
@@ -60,20 +60,10 @@ namespace LivePose.Entities.Actor
         
         public override void OnAttached()
         {
-            AddCapability(ActivatorUtilities.CreateInstance<ActorLifetimeCapability>(_serviceProvider, this));
             AddCapability(ActivatorUtilities.CreateInstance<ActorAppearanceCapability>(_serviceProvider, this));
             AddCapability(ActivatorUtilities.CreateInstance<SkeletonPosingCapability>(_serviceProvider, this));
-            AddCapability(ActivatorUtilities.CreateInstance<ModelPosingCapability>(_serviceProvider, this));
             AddCapability(ActivatorUtilities.CreateInstance<PosingCapability>(_serviceProvider, this));
-
             AddCapability(ActionTimelineCapability.CreateIfEligible(_serviceProvider, this));
-
-            if(ActorType is not ActorType.Prop)
-            {
-                AddCapability(StatusEffectCapability.CreateIfEligible(_serviceProvider, this));
-            }
-
-            AddCapability(ActivatorUtilities.CreateInstance<ActorDebugCapability>(_serviceProvider, this));
         }
     }
 }

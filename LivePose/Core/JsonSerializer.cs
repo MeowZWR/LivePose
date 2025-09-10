@@ -35,7 +35,6 @@ public static class JsonSerializer
         _legacySerializeOptions.Converters.Add(new Vector3Converter());
         _legacySerializeOptions.Converters.Add(new Vector4Converter());
         _legacySerializeOptions.Converters.Add(new QuaternionConverter());
-        _legacySerializeOptions.Converters.Add(new LegacyGlassesSaveConverter());
     }
 
     public static T Deserialize<T>(string json)

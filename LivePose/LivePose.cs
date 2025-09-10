@@ -77,7 +77,6 @@ public class LivePose : IDisposable {
 
                 // Setup default entities
                 Log.Debug($"Setting up default entitites...");
-                _services.GetRequiredService<EntityManager>().SetupDefaultEntities();
                 _services.GetRequiredService<EntityActorManager>().AttachContainer();
                 
 
@@ -125,7 +124,6 @@ public class LivePose : IDisposable {
         serviceCollection.AddSingleton<FakePoseService>();
         
         // Core / Misc
-        serviceCollection.AddSingleton<EventBus>();
         serviceCollection.AddSingleton<DalamudService>();
         serviceCollection.AddSingleton<ConfigurationService>();
         serviceCollection.AddSingleton<ResourceProvider>();
@@ -153,14 +151,11 @@ public class LivePose : IDisposable {
         serviceCollection.AddSingleton<PosingService>();
         serviceCollection.AddSingleton<IKService>();
         serviceCollection.AddSingleton<ObjectMonitorService>();
-        serviceCollection.AddSingleton<PhysicsService>();
         serviceCollection.AddSingleton<GameInputService>();
 
         // Library
-        serviceCollection.AddSingleton<FileTypeInfoBase, AnamnesisCharaFileInfo>();
         serviceCollection.AddSingleton<FileTypeInfoBase, CMToolPoseFileInfo>();
         serviceCollection.AddSingleton<FileTypeInfoBase, PoseFileInfo>();
-        serviceCollection.AddSingleton<FileTypeInfoBase, SceneFileInfo>();
         serviceCollection.AddSingleton<FileService>();
 
         serviceCollection.AddSingleton<SourceBase, GameDataNpcSource>();
@@ -172,7 +167,6 @@ public class LivePose : IDisposable {
 
         // UI
         serviceCollection.AddSingleton<UIManager>();
-        serviceCollection.AddSingleton<MainWindow>();
         serviceCollection.AddSingleton<SettingsWindow>();
         serviceCollection.AddSingleton<LibraryWindow>();
         serviceCollection.AddSingleton<PosingOverlayWindow>();
@@ -202,11 +196,6 @@ public class LivePose : IDisposable {
 
         Tvalue = default!;
         return false;
-    }
-
-    public static void NotifyError(string message)
-    {
-        EventBus.Instance.NotifyError(message);
     }
 
     public void Dispose()

@@ -137,8 +137,7 @@ public class PosingTransformWindow : Window
             return;
 
         var selected = posing.Selected;
-
-        var currentTransform = posing.ModelPosing.Transform;
+        
 
         Game.Posing.Skeletons.Bone? selectedBone = null;
 
@@ -167,8 +166,8 @@ public class PosingTransformWindow : Window
                     Scale = (Vector3)charaBase->CharacterBase.DrawObject.Object.Scale * charaBase->ScaleFactor
                 }.ToMatrix();
             },
-            _ => posing.ModelPosing.Transform.ToMatrix(),
-            _ => posing.ModelPosing.Transform.ToMatrix()
+            _ => null,
+            _ => null
         );
 
         if(targetMatrix == null)
@@ -188,7 +187,7 @@ public class PosingTransformWindow : Window
 
         if(ImBrioGizmo.DrawRotation(ref matrix, gizmoSize, _posingService.CoordinateMode == PosingCoordinateMode.World))
         {
-            if(!posing.ModelPosing.Freeze && !(selectedBone != null && selectedBone.Freeze))
+            if(!(selectedBone != null && selectedBone.Freeze))
                 _trackingMatrix = matrix;
         }
 
@@ -198,8 +197,8 @@ public class PosingTransformWindow : Window
                     posing.SkeletonPosing.GetBonePose(boneSelect).Apply(_trackingMatrix.Value.ToTransform(), originalMatrix.ToTransform());
                    
                 },
-                _ => posing.ModelPosing.Transform += _trackingMatrix.Value.ToTransform().CalculateDiff(originalMatrix.ToTransform()),
-                _ => posing.ModelPosing.Transform += _trackingMatrix.Value.ToTransform().CalculateDiff(originalMatrix.ToTransform())
+                _ => {},
+                _ => {}
             );
             
             if(posing.GameObject.ObjectIndex == 0) {

@@ -25,7 +25,6 @@ public class PosingCapability : ActorCharacterCapability
     public PosingSelectionType LastHover { get; set; } = new None();
 
     public SkeletonPosingCapability SkeletonPosing => Entity.GetCapability<SkeletonPosingCapability>();
-    public ModelPosingCapability ModelPosing => Entity.GetCapability<ModelPosingCapability>();
 
     public PosingService PosingService => _posingService;
 
@@ -37,10 +36,6 @@ public class PosingCapability : ActorCharacterCapability
         {
             if(Entity.TryGetCapability<SkeletonPosingCapability>(out var skeletonPosing))
                 if(skeletonPosing.PoseInfo.IsOverridden)
-                    return true;
-
-            if(Entity.TryGetCapability<ModelPosingCapability>(out var modelPosing))
-                if(modelPosing.HasOverride)
                     return true;
 
             return false;
@@ -131,7 +126,7 @@ public class PosingCapability : ActorCharacterCapability
         }
         catch
         {
-            LivePose.NotifyError("Invalid pose file.");
+            LivePose.Log.Warning("Invalid pose file.");
         }
     }
 
@@ -168,7 +163,7 @@ public class PosingCapability : ActorCharacterCapability
 
         if(poseFile.Bones.Count == 0 && poseFile.MainHand.Count == 0 && poseFile.OffHand.Count == 0)
         {
-            LivePose.NotifyError("Invalid pose file.");
+            LivePose.Log.Warning("Invalid pose file.");
             LivePose.Log.Verbose($"Invalid pose file. {reconcile} {reset} {generateSnapshot} {asExpression} {expressionPhase2} {asScene} {asIPCpose} {asBody}");
             return;
         }
@@ -217,13 +212,9 @@ public class PosingCapability : ActorCharacterCapability
             }
         }
 
-        if(applyModelTransform && reset)
-            ModelPosing.ResetTransform();
+
 
         SkeletonPosing.ImportSkeletonPose(poseFile, options, expressionPhase2);
-
-        if(asExpression == false)
-            ModelPosing.ImportModelPose(poseFile, options, asScene, applyModelTransform);
 
         if(generateSnapshot)
             _framework.RunOnTick(() => Snapshot(reset, reconcile, asExpression: asExpression), delayTicks: 4);
@@ -259,12 +250,6 @@ public class PosingCapability : ActorCharacterCapability
             return;
         }
 
-        if(_undoStack.Count == 0)
-            _undoStack.Push(new PoseStack(new PoseInfo(), ModelPosing.OriginalTransform));
-
-        _undoStack.Push(new PoseStack(SkeletonPosing.PoseInfo.Clone(), ModelPosing.Transform));
-        _undoStack = _undoStack.Trim(undoStackSize + 1);
-
         if(reconcile)
             Reconcile(reset);
     }
@@ -281,7 +266,6 @@ public class PosingCapability : ActorCharacterCapability
         {
             _undoStack.Push(redoStack);
             SkeletonPosing.PoseInfo = redoStack.Info.Clone();
-            ModelPosing.Transform = redoStack.ModelTransform;
         }
         
         if(GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
@@ -303,7 +287,6 @@ public class PosingCapability : ActorCharacterCapability
         if(_undoStack.TryPeek(out var applicable))
         {
             SkeletonPosing.PoseInfo = applicable.Info.Clone();
-            ModelPosing.Transform = applicable.ModelTransform;
         }
 
         if(GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
@@ -316,7 +299,6 @@ public class PosingCapability : ActorCharacterCapability
     {
         if(Actor.IsProp == false)
             SkeletonPosing.ResetPose();
-        ModelPosing.ResetTransform();
 
         if(clearHistStack)
             _redoStack.Clear();
@@ -342,7 +324,6 @@ public class PosingCapability : ActorCharacterCapability
     {
         var poseFile = new PoseFile();
         SkeletonPosing.ExportSkeletonPose(poseFile);
-        ModelPosing.ExportModelPose(poseFile);
         return poseFile;
     }
     public BonePoseInfoId? IsSelectedBone()

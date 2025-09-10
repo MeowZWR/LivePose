@@ -36,18 +36,17 @@ public class PosingGraphicalWindow : Window, IDisposable
     private readonly ConfigurationService _configurationService;
     private readonly PosingService _posingService;
     private readonly GPoseService _gPoseService;
-    private readonly PhysicsService _physicsService;
     private readonly PosingTransformEditor _transformEditor = new();
     private readonly BoneSearchControl _boneSearchControl = new();
     private float _closestHover = float.MaxValue;
 
     private Matrix4x4? _trackingMatrix;
-    private List<(EntityId id, PoseInfo info, Transform model)>? _groupedSnapshotPending = null;
+    private List<(EntityId id, PoseInfo info)>? _groupedSnapshotPending = null;
 
     int _selectedPane = 0;
     private bool _hideControlPane = false;
 
-    public PosingGraphicalWindow(EntityManager entityManager, HistoryService groupedUndoService, PhysicsService physicsService, ConfigurationService configurationService, PosingService posingService, GPoseService gPoseService) : base($"{LivePose.Name} - POSING###livepose_posing_graphical_window")
+    public PosingGraphicalWindow(EntityManager entityManager, HistoryService groupedUndoService, ConfigurationService configurationService, PosingService posingService, GPoseService gPoseService) : base($"{LivePose.Name} - POSING###livepose_posing_graphical_window")
     {
         Namespace = "livepose_posing_graphical_namespace";
 
@@ -56,7 +55,6 @@ public class PosingGraphicalWindow : Window, IDisposable
         _configurationService = configurationService;
         _posingService = posingService;
         _gPoseService = gPoseService;
-        _physicsService = physicsService;
 
         _posePositions = ResourceProvider.Instance.GetResourceDocument<GraphicalPosePositionFile>("Data.GraphicalBonePosePositions.json");
         _posePositions.Process();
@@ -363,8 +361,7 @@ public class PosingGraphicalWindow : Window, IDisposable
             return;
 
         var selected = posing.Selected;
-
-        var currentTransform = posing.ModelPosing.Transform;
+        
 
         Game.Posing.Skeletons.Bone? selectedBone = null;
 
@@ -393,8 +390,8 @@ public class PosingGraphicalWindow : Window, IDisposable
                     Scale = (Vector3)charaBase->CharacterBase.DrawObject.Object.Scale * charaBase->ScaleFactor
                 }.ToMatrix();
             },
-            _ => posing.ModelPosing.Transform.ToMatrix(),
-            _ => posing.ModelPosing.Transform.ToMatrix()
+            _ => null,
+            _ => null
         );
 
         if(targetMatrix == null)
@@ -415,7 +412,7 @@ public class PosingGraphicalWindow : Window, IDisposable
 
         if(ImBrioGizmo.DrawRotation(ref matrix, gizmoSize, _posingService.CoordinateMode == PosingCoordinateMode.World))
         {
-            if(!posing.ModelPosing.Freeze && !(selectedBone != null && selectedBone.Freeze))
+            if(!(selectedBone != null && selectedBone.Freeze))
                 _trackingMatrix = matrix;
         }
 
@@ -437,7 +434,7 @@ public class PosingGraphicalWindow : Window, IDisposable
                     // On first application while starting a gizmo drag, capture before-states for grouped undo
                     if(_groupedSnapshotPending == null && ImBrioGizmo.IsUsing())
                     {
-                        var list = new List<(EntityId, PoseInfo, Transform)>();
+                        var list = new List<(EntityId, PoseInfo)>();
                         foreach(var id in _entityManager.SelectedEntityIds)
                         {
                             if(!_entityManager.TryGetEntity(id, out var ent))
@@ -446,7 +443,7 @@ public class PosingGraphicalWindow : Window, IDisposable
                             if(!ent.TryGetCapability<PosingCapability>(out var cap))
                                 continue;
 
-                            list.Add((id, cap.SkeletonPosing.PoseInfo.Clone(), cap.ModelPosing.Transform));
+                            list.Add((id, cap.SkeletonPosing.PoseInfo.Clone()));
                         }
                         _groupedSnapshotPending = list;
                     }
@@ -459,11 +456,6 @@ public class PosingGraphicalWindow : Window, IDisposable
 
                         if(!ent.TryGetCapability<PosingCapability>(out var cap))
                             continue;
-
-                        if(cap.ModelPosing.Freeze)
-                            continue;
-
-                        cap.ModelPosing.Transform += delta;
                     }
                 },
                 _ =>
@@ -471,7 +463,7 @@ public class PosingGraphicalWindow : Window, IDisposable
                     // On first application while starting a gizmo drag, capture before-states for grouped undo
                     if(_groupedSnapshotPending == null && ImBrioGizmo.IsUsing())
                     {
-                        var list = new List<(EntityId, PoseInfo, Transform)>();
+                        var list = new List<(EntityId, PoseInfo)>();
                         foreach(var id in _entityManager.SelectedEntityIds)
                         {
                             if(!_entityManager.TryGetEntity(id, out var ent))
@@ -480,7 +472,7 @@ public class PosingGraphicalWindow : Window, IDisposable
                             if(!ent.TryGetCapability<PosingCapability>(out var cap))
                                 continue;
 
-                            list.Add((id, cap.SkeletonPosing.PoseInfo.Clone(), cap.ModelPosing.Transform));
+                            list.Add((id, cap.SkeletonPosing.PoseInfo.Clone()));
                         }
                         _groupedSnapshotPending = list;
                     }
@@ -493,11 +485,7 @@ public class PosingGraphicalWindow : Window, IDisposable
 
                         if(!ent.TryGetCapability<PosingCapability>(out var cap))
                             continue;
-
-                        if(cap.ModelPosing.Freeze)
-                            continue;
-
-                        cap.ModelPosing.Transform += delta;
+                        
                     }
                 }
             );
