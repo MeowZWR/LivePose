@@ -70,12 +70,7 @@ public unsafe class ActionTimelineService : IDisposable
     private void CalculateAndApplyOverallSpeedDetour(TimelineContainer* a1)
     {
         _calculateAndApplyOverallSpeedHook.Original(a1);
-
-        foreach(var timelineId in a1->TimelineSequencer.TimelineIds) {
-            if (timelineId == 0) continue;
-            if(!freezeableTimelines.Contains(timelineId)) return;
-        }
-        
+        if(!freezeableTimelines.Contains(a1->TimelineSequencer.TimelineIds[0])) return;
         if(!_entityManager.TryGetEntity(a1->OwnerObject, out var entity)) return;
         if(!entity.TryGetCapability<ActionTimelineCapability>(out var atc)) return;
         if(!atc.SpeedMultiplierOverride.HasValue) return;
