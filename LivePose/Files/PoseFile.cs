@@ -25,7 +25,7 @@ public class PoseFileInfo : AppliableActorFileInfoBase<PoseFile>
     private PosingService _posingService;
 
     public override string Name => "Pose File";
-    public override IDalamudTextureWrap Icon => ResourceProvider.Instance.GetResourceImage("Images.FileIcon_Pose.png");
+    public override IDalamudTextureWrap Icon => ResourceProvider.Instance.GetResourceImage("Images.FileIcon_Unknown.png");
     public override string Extension => ".pose";
 
     public PoseFileInfo(EntityManager entityManager, PosingService posingService, ConfigurationService configurationService)

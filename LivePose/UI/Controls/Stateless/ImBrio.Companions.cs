@@ -21,14 +21,7 @@ public static partial class ImBrio
             description = string.Empty;
         }
 
-        var placeholderIcon = union.Match(
-                companion => "Images.Companion.png",
-                mount => "Images.Mount.png",
-                ornament => "Images.Ornament.png",
-                none => "Images.Companion.png"
-            );
-
-        wasClicked = BorderedGameIcon(id, icon, placeholderIcon, description, flags, size);
+        wasClicked = BorderedGameIcon(id, icon, "Images.UnknownIcon.png", description, flags, size);
 
         return wasClicked;
     }

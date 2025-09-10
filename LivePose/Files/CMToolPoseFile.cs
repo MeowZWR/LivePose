@@ -54,7 +54,7 @@ public class CMToolPoseFileInfo : AppliableActorFileInfoBase<CMToolPoseFile>
     private PosingService _posingService;
 
     public override string Name => "CMTool Pose File";
-    public override IDalamudTextureWrap Icon => ResourceProvider.Instance.GetResourceImage("Images.FileIcon_Pose.png");
+    public override IDalamudTextureWrap Icon => ResourceProvider.Instance.GetResourceImage("Images.FileIcon_Unknown.png");
     public override string Extension => ".cmp";
 
     public CMToolPoseFileInfo(EntityManager entityManager, PosingService posingService, ConfigurationService configurationService)

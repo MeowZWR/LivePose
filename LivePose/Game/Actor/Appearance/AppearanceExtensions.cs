@@ -110,51 +110,6 @@ public static class AppearanceExtensions
 
     public static string GetEquipSlotFallback(this ActorEquipSlot slot)
     {
-        if(slot.HasFlag(ActorEquipSlot.All) || slot.HasFlag(ActorEquipSlot.Armor) || slot.HasFlag(ActorEquipSlot.AllButWeapons))
-            return "Images.Body.png";
-
-        if(slot.HasFlag(ActorEquipSlot.Weapons))
-            return "Images.MainHand.png";
-
-        if(slot.HasFlag(ActorEquipSlot.Accessories))
-            return "Images.Ears.png";
-
-        if(slot.HasFlag(ActorEquipSlot.MainHand))
-            return "Images.MainHand.png";
-
-        if(slot.HasFlag(ActorEquipSlot.OffHand))
-            return "Images.OffHand.png";
-
-        if(slot.HasFlag(ActorEquipSlot.Head))
-            return "Images.Head.png";
-
-        if(slot.HasFlag(ActorEquipSlot.Body))
-            return "Images.Body.png";
-
-        if(slot.HasFlag(ActorEquipSlot.Hands))
-            return "Images.Hands.png";
-
-        if(slot.HasFlag(ActorEquipSlot.Legs))
-            return "Images.Legs.png";
-
-        if(slot.HasFlag(ActorEquipSlot.Feet))
-            return "Images.Feet.png";
-
-        if(slot.HasFlag(ActorEquipSlot.Ears))
-            return "Images.Ears.png";
-
-        if(slot.HasFlag(ActorEquipSlot.Neck))
-            return "Images.Neck.png";
-
-        if(slot.HasFlag(ActorEquipSlot.Wrists))
-            return "Images.Wrists.png";
-
-        if(slot.HasFlag(ActorEquipSlot.RightRing))
-            return "Images.Ring.png";
-
-        if(slot.HasFlag(ActorEquipSlot.LeftRing))
-            return "Images.Ring.png";
-
         return "Images.UnknownIcon.png";
     }
 }

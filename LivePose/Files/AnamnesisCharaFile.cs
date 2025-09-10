@@ -15,7 +15,7 @@ namespace LivePose.Files;
 public class AnamnesisCharaFileInfo(EntityManager entityManager, ConfigurationService configurationService) : AppliableActorFileInfoBase<AnamnesisCharaFile>(entityManager, configurationService)
 {
     public override string Name => "Character File";
-    public override IDalamudTextureWrap Icon => ResourceProvider.Instance.GetResourceImage("Images.FileIcon_Chara.png");
+    public override IDalamudTextureWrap Icon => ResourceProvider.Instance.GetResourceImage("Images.FileIcon_Unknown.png");
     public override string Extension => ".chara";
 
     protected override void Apply(AnamnesisCharaFile file, ActorEntity actor, bool asExpression = false)

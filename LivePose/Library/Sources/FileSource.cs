@@ -124,7 +124,7 @@ public class DirectoryEntry : GroupEntryBase
             _name = Name.Substring(0, 55) + "...";
         }
 
-        _icon = ResourceProvider.Instance.GetResourceImage("Images.FileIcon_Directory.png");
+        _icon = ResourceProvider.Instance.GetResourceImage("Images.FileIcon_Unknown.png");
     }
 
     public override string Name => _name;

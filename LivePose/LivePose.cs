@@ -28,7 +28,7 @@ using LivePose.Entities.Core;
 namespace LivePose;
 
 public class LivePose : IDisposable {
-    public static string Name { get; private set; }
+    public static string Name { get; private set; } = "LivePose";
 
     internal static bool IsPlugin;
     

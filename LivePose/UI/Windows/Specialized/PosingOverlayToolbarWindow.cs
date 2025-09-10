@@ -31,6 +31,7 @@ public class PosingOverlayToolbarWindow : Window
     private readonly ConfigurationService _configurationService;
     private readonly GameInputService _gameInputService;
     private readonly IClientState _clientState;
+    private readonly PosingGraphicalWindow _graphicalWindow;
     
     private readonly BoneSearchControl _boneSearchControl = new();
 
@@ -39,7 +40,7 @@ public class PosingOverlayToolbarWindow : Window
 
     private const string _boneFilterPopupName = "livepose_bone_filter_popup";
 
-    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, HistoryService groupedUndoService, GameInputService gameInputService, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
+    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, HistoryService groupedUndoService, GameInputService gameInputService, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
     {
         Namespace = "livepose_posing_overlay_toolbar_namespace";
 
@@ -51,6 +52,7 @@ public class PosingOverlayToolbarWindow : Window
         _groupedUndoService = groupedUndoService;
         _gameInputService = gameInputService;
         _clientState = clientState;
+        _graphicalWindow = graphicalWindow;
 
         TitleBarButtons =
         [
@@ -157,7 +159,7 @@ public class PosingOverlayToolbarWindow : Window
 
         using(ImRaii.PushFont(UiBuilder.IconFont))
         {
-            if(ImGui.Button($"{(_posingService.CoordinateMode == PosingCoordinateMode.Local ? FontAwesomeIcon.Globe.ToIconString() : FontAwesomeIcon.Atom.ToIconString())}###select_mode", new Vector2(buttonSize)))
+            if(ImGui.Button($"{(_posingService.CoordinateMode == PosingCoordinateMode.Local ? FontAwesomeIcon.Globe.ToIconString() : FontAwesomeIcon.Atom.ToIconString())}###select_mode", new Vector2(buttonOperationSize)))
                 _posingService.CoordinateMode = _posingService.CoordinateMode == PosingCoordinateMode.Local ? PosingCoordinateMode.World : PosingCoordinateMode.Local;
         }
         if(ImGui.IsItemHovered())
@@ -169,18 +171,30 @@ public class PosingOverlayToolbarWindow : Window
         {
             using(ImRaii.PushFont(UiBuilder.IconFont))
             {
-                if(ImGui.Button($"{FontAwesomeIcon.LocationCrosshairs.ToIconString()}###toggle_transforms_window", new Vector2(buttonSize)))
+                if(ImGui.Button($"{FontAwesomeIcon.LocationCrosshairs.ToIconString()}###toggle_transforms_window", new Vector2(buttonOperationSize)))
                     _overlayTransformWindow.IsOpen = !_overlayTransformWindow.IsOpen;
             }
         }
         if(ImGui.IsItemHovered())
             ImGui.SetTooltip("Toggle Transform Window");
+        
+        ImGui.SameLine();
+
+        using(ImRaii.PushColor(ImGuiCol.Text, _overlayTransformWindow.IsOpen ? UIConstants.ToggleButtonActive : UIConstants.ToggleButtonInactive))
+        {
+            using(ImRaii.PushFont(UiBuilder.IconFont)) {
+                if(ImGui.Button($"{FontAwesomeIcon.LocationCrosshairs.ToIconString()}###toggle_advanced_window", new Vector2(buttonOperationSize)))
+                    _graphicalWindow.IsOpen = !_graphicalWindow.IsOpen;
+            }
+        }
+        if(ImGui.IsItemHovered())
+            ImGui.SetTooltip("Toggle Advanced Pose Window");
 
         ImGui.SameLine();
 
         using(ImRaii.PushFont(UiBuilder.IconFont))
         {
-            if(ImGui.Button($"{FontAwesomeIcon.WindowClose.ToIconString()}###close_overlay", new Vector2(buttonSize)))
+            if(ImGui.Button($"{FontAwesomeIcon.WindowClose.ToIconString()}###close_overlay", new Vector2(buttonOperationSize)))
                 _overlayWindow.IsOpen = false;
         }
         if(ImGui.IsItemHovered())
