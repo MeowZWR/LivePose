@@ -250,6 +250,12 @@ public class PosingCapability : ActorCharacterCapability
             return;
         }
 
+        if(_undoStack.Count == 0)
+            _undoStack.Push(new PoseStack(new PoseInfo(), Transform.Identity));
+
+        _undoStack.Push(new PoseStack(SkeletonPosing.PoseInfo.Clone(), Transform.Identity));
+        _undoStack = _undoStack.Trim(undoStackSize + 1);
+
         if(reconcile)
             Reconcile(reset);
     }

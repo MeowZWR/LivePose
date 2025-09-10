@@ -143,7 +143,7 @@ public class LivePose : IDisposable {
         serviceCollection.AddSingleton<ActorRedrawService>();
         serviceCollection.AddSingleton<ActionTimelineService>();
         serviceCollection.AddSingleton<GPoseService>();
-        if(!IsPlugin) {
+        if(IsPlugin) {
             serviceCollection.AddSingleton<CommandHandlerService>();
         }
         serviceCollection.AddSingleton<ModelTransformService>();

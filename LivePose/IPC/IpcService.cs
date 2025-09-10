@@ -185,7 +185,7 @@ public class IpcService : IDisposable
                 LivePose.Log.Warning("Pose is null");
                 return;
             }
-            LivePose.Log.Warning("Applying Pose");
+            LivePose.Log.Verbose($"Applying Pose to GameObject#{obj.ObjectIndex} => {data}");
             foreach(var (b, list) in livePoseData.Pose) {
                 var bone = skeletonPosingCapability.GetBone(b, PoseInfoSlot.Character);
                 if(bone == null) continue;
