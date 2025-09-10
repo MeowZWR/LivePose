@@ -53,7 +53,7 @@ public class HistoryService(EntityManager entityManager)
             cap.ModelPosing.Transform = e.ModelTransform;
 
             if(cap.GameObject.ObjectIndex == 0) {
-                if(LivePosePlugin.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                if(LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
                     service.SetPlayerPoseTag();
                 }
             }
@@ -86,7 +86,7 @@ public class HistoryService(EntityManager entityManager)
             cap.ModelPosing.Transform = e.ModelTransform;
             
             if(cap.GameObject.ObjectIndex == 0) {
-                if(LivePosePlugin.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                if(LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
                     service.SetPlayerPoseTag();
                 }
             }

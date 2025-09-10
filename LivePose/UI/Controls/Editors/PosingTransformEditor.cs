@@ -172,7 +172,7 @@ public class PosingTransformEditor
             }
 
             if(didChange && posingCapability.GameObject.ObjectIndex == 0) {
-                if(LivePosePlugin.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                if(LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
                     service.SetPlayerPoseTag();
                 }
             }

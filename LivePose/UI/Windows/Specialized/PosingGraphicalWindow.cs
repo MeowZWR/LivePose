@@ -47,7 +47,7 @@ public class PosingGraphicalWindow : Window, IDisposable
     int _selectedPane = 0;
     private bool _hideControlPane = false;
 
-    public PosingGraphicalWindow(EntityManager entityManager, HistoryService groupedUndoService, PhysicsService physicsService, ConfigurationService configurationService, PosingService posingService, GPoseService gPoseService) : base($"{LivePosePlugin.Name} - POSING###livepose_posing_graphical_window")
+    public PosingGraphicalWindow(EntityManager entityManager, HistoryService groupedUndoService, PhysicsService physicsService, ConfigurationService configurationService, PosingService posingService, GPoseService gPoseService) : base($"{LivePose.Name} - POSING###livepose_posing_graphical_window")
     {
         Namespace = "livepose_posing_graphical_namespace";
 
@@ -109,7 +109,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         posing.Hover = new None();
         _closestHover = float.MaxValue;
 
-        WindowName = $"{LivePosePlugin.Name} - Posing - {posing.Entity.FriendlyName}###livepose_posing_graphical_window";
+        WindowName = $"{LivePose.Name} - Posing - {posing.Entity.FriendlyName}###livepose_posing_graphical_window";
 
         DrawGlobalButtons(posing);
 
@@ -430,7 +430,7 @@ public class PosingGraphicalWindow : Window, IDisposable
                 boneSelect => {
                     posing.SkeletonPosing.GetBonePose(boneSelect).Apply(_trackingMatrix.Value.ToTransform(), originalMatrix.ToTransform());
                     if(posing.GameObject.ObjectIndex == 0) {
-                        if(LivePosePlugin.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                        if(LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
                             service.SetPlayerPoseTag();
                         }
                     }

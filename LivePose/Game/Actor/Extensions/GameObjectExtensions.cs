@@ -51,7 +51,7 @@ public static class GameObjectExtensions
 
     public static bool IsGPose(this IGameObject go)
     {
-        return LivePosePlugin.TryGetService<FakePoseService>(out var fps) && fps.IsPosed(go);
+        return LivePose.TryGetService<FakePoseService>(out var fps) && fps.IsPosed(go);
     }
 
     public unsafe static StructsObject* Native(this IGameObject go)

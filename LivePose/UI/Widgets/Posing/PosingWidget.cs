@@ -7,6 +7,7 @@ using LivePose.UI.Controls.Editors;
 using LivePose.UI.Controls.Stateless;
 using LivePose.UI.Widgets.Core;
 using System.Numerics;
+using LivePose.IPC;
 
 namespace LivePose.UI.Widgets.Posing;
 
@@ -93,6 +94,10 @@ public class PosingWidget(PosingCapability capability) : Widget<PosingCapability
                     timelineCapability.ResetOverallSpeedOverride();
                 else
                     timelineCapability.SetOverallSpeedOverride(0f);
+
+                if(Capability.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                    service.SetPlayerPoseTag();
+                }
 
             }
             ImGui.SameLine();

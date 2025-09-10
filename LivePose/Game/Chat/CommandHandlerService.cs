@@ -42,7 +42,7 @@ public class CommandHandlerService : IDisposable
         {
             case "overlay":
                 if(_clientState.LocalPlayer != null) {
-                    if(LivePosePlugin.TryGetService<EntityManager>(out var manager)) {
+                    if(LivePose.TryGetService<EntityManager>(out var manager)) {
                         if(manager.TryGetEntity(new EntityId(_clientState.LocalPlayer), out var entity)) {
                             if(entity.TryGetCapability<PosingCapability>(out var posingCapability)) {
                                 manager.SetSelectedEntity(entity);

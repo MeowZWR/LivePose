@@ -16,7 +16,7 @@ public class FileService
         {
             if(_typeInfoMap.ContainsKey(typeInfo.Type))
             {
-                LivePosePlugin.Log.Error($"Multiple file type info objects for file type: {typeInfo.Type}");
+                LivePose.Log.Error($"Multiple file type info objects for file type: {typeInfo.Type}");
                 continue;
             }
 
@@ -72,7 +72,7 @@ public class FileService
         }
 
         if(lastException != null)
-            LivePosePlugin.Log.Error(lastException, $"Error loading file: {path}");
+            LivePose.Log.Error(lastException, $"Error loading file: {path}");
 
         return null;
     }

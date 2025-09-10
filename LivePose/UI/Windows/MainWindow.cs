@@ -36,7 +36,7 @@ public class MainWindow : Window, IDisposable
         GPoseService gPoseService,
         IClientState clientState
         )
-        : base($" {LivePosePlugin.Name} [{configService.Version}]###livepose_main_window", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize)
+        : base($" {LivePose.Name} [{configService.Version}]###livepose_main_window", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize)
     {
         Namespace = "livepose_main_namespace";
 

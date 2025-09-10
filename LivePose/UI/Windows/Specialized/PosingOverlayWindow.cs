@@ -527,7 +527,7 @@ public class PosingOverlayWindow : Window, IDisposable
                 _ => { }
             );
             
-            if(posing.GameObject.ObjectIndex == 0 && LivePosePlugin.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+            if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
                 service.SetPlayerPoseTag();
             }
         }

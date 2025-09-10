@@ -6,6 +6,8 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using LivePose.Capabilities.Actor;
 using LivePose.Entities;
 using System;
+using System.Collections.Generic;
+using Lumina.Excel.Sheets;
 
 namespace LivePose.Game.Actor;
 
@@ -26,11 +28,8 @@ public unsafe class ActionTimelineService : IDisposable
         Overlay = 12
     }
 
-    private delegate bool CalculateAndApplyOverallSpeedDelegate(TimelineContainer* a1);
+    private delegate void CalculateAndApplyOverallSpeedDelegate(TimelineContainer* a1);
     private readonly Hook<CalculateAndApplyOverallSpeedDelegate> _calculateAndApplyOverallSpeedHook = null!;
-
-    private delegate void SetSlotSpeedDelegate(ActionTimelineSequencer* a1, ActionTimelineSlots slot, float speed);
-    private readonly Hook<SetSlotSpeedDelegate> _setSpeedSlotHook = null!;
 
     private readonly EntityManager _entityManager;
 
@@ -41,56 +40,50 @@ public unsafe class ActionTimelineService : IDisposable
         var calculateAndApplyAddress = scanner.ScanText("E8 ?? ?? ?? ?? 48 8D 8B ?? ?? ?? ?? 48 8B 01 FF 50 ?? 48 8D 8B ?? ?? ?? ?? 48 8B 01 FF 50 ?? F6 83");
         _calculateAndApplyOverallSpeedHook = hooking.HookFromAddress<CalculateAndApplyOverallSpeedDelegate>(calculateAndApplyAddress, CalculateAndApplyOverallSpeedDetour);
         _calculateAndApplyOverallSpeedHook.Enable();
-
-        _setSpeedSlotHook = hooking.HookFromAddress<SetSlotSpeedDelegate>(ActionTimelineSequencer.Addresses.SetSlotSpeed.Value, SetSlotSpeedDetour);
-        _setSpeedSlotHook.Enable();
     }
 
-    private bool CalculateAndApplyOverallSpeedDetour(TimelineContainer* a1)
-    {
-        bool result = _calculateAndApplyOverallSpeedHook.Original(a1);
-        if(_entityManager.TryGetEntity(a1->OwnerObject, out var entity))
-        {
-            if(entity.TryGetCapability<ActionTimelineCapability>(out var atc))
-            {
-                if(atc.SpeedMultiplierOverride.HasValue)
-                {
-                    a1->OverallSpeed = atc.SpeedMultiplierOverride.Value;
-                    result |= true;
-                }
 
-                if(atc.CheckAndResetDirtySlots())
-                    result |= true;
-            }
+    private static readonly HashSet<uint> freezeableTimelines = [
+        3, 3124, 3126, 3182, 3184, 7405, 7407,  // Idle Poses
+    ];
 
+    static ActionTimelineService() {
+        if(!LivePose.TryGetService<IDataManager>(out var dataManager)) {
+            LivePose.Log.Error("Failed to get DataManager.");
         }
 
-        return result;
+        foreach(var e in dataManager.GetExcelSheet<Emote>()) {
+            foreach(var t in e.ActionTimeline) {
+                if(t is { RowId: > 0, IsValid: true }) {
+                    if(t.Value.IsLoop) {
+                        freezeableTimelines.Add(t.RowId);
+                    }
+                }
+            }
+        }
+        
+        
+        
     }
+    
 
-    private unsafe void SetSlotSpeedDetour(ActionTimelineSequencer* a1, ActionTimelineSlots slot, float speed)
+    private void CalculateAndApplyOverallSpeedDetour(TimelineContainer* a1)
     {
-        float finalSpeed = speed;
+        _calculateAndApplyOverallSpeedHook.Original(a1);
 
-        var owner = a1->Parent;
-
-        if(_entityManager.TryGetEntity(owner, out var entity))
-        {
-            if(entity.TryGetCapability<ActionTimelineCapability>(out var atc))
-            {
-                if(atc.HasSlotSpeedOverride(slot))
-                {
-                    finalSpeed = atc.GetSlotSpeed(slot);
-                }
-            }
-
+        foreach(var timelineId in a1->TimelineSequencer.TimelineIds) {
+            if (timelineId == 0) continue;
+            if(!freezeableTimelines.Contains(timelineId)) return;
         }
-        _setSpeedSlotHook.Original(a1, slot, finalSpeed);
+        
+        if(!_entityManager.TryGetEntity(a1->OwnerObject, out var entity)) return;
+        if(!entity.TryGetCapability<ActionTimelineCapability>(out var atc)) return;
+        if(!atc.SpeedMultiplierOverride.HasValue) return;
+        a1->OverallSpeed = atc.SpeedMultiplierOverride.Value;
     }
 
     public void Dispose()
     {
         _calculateAndApplyOverallSpeedHook.Dispose();
-        _setSpeedSlotHook.Dispose();
     }
 }

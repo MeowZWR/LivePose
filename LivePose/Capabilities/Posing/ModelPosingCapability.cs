@@ -28,7 +28,6 @@ public class ModelPosingCapability : ActorCharacterCapability
         {
             _originalTransform ??= Transform;
             _transformOverride = value;
-            _transformService.SetTransform(GameObject, value);
         }
     }
 
@@ -60,14 +59,13 @@ public class ModelPosingCapability : ActorCharacterCapability
         _transformOverride = null;
         if(_originalTransform.HasValue)
         {
-            _transformService.SetTransform(GameObject, _originalTransform.Value);
             _originalTransform = null;
         }
     }
 
     public override void Dispose()
     {
-        ResetTransform();
+        
     }
 
     public void ImportModelPose(PoseFile poseFile, PoseImporterOptions options, bool isLoadingAsScene, bool applyModelTransform)

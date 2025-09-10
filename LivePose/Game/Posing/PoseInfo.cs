@@ -114,17 +114,17 @@ public class BonePoseInfo(BonePoseInfoId id, PoseInfo parent)
         if(finaleTransform.IsRotationNaN())
         {
             finaleTransform.Rotation = Quaternion.Identity;
-            LivePosePlugin.Log.Warning($"IsRotationNaN !!!!!!!!!");
+            LivePose.Log.Warning($"IsRotationNaN !!!!!!!!!");
         }
         else if(finaleTransform.IsPositionNaN())
         {
             finaleTransform.Position = Vector3.Zero;
-            LivePosePlugin.Log.Warning($"IsPositionNaN !!!!!!!!!");
+            LivePose.Log.Warning($"IsPositionNaN !!!!!!!!!");
         }
         else if(finaleTransform.IsScaleNaN())
         {
             finaleTransform.Scale = Vector3.Zero;
-            LivePosePlugin.Log.Warning($"IsScaleNaN !!!!!!!!!");
+            LivePose.Log.Warning($"IsScaleNaN !!!!!!!!!");
         }
 
         _stacks[transformIndex] = new(prop, ikInfo.Value, finaleTransform);

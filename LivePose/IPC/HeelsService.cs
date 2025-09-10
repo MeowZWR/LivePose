@@ -83,7 +83,7 @@ public class HeelsService : BrioIPC {
         _framework.RunOnTick(() => {
             if(token.IsCancellationRequested) return;
             
-            LivePosePlugin.Log.Debug("Updating LivePose Tag for local player.");
+            LivePose.Log.Debug("Updating LivePose Tag for local player.");
             
             /*
            var obj = _clientState.LocalPlayer;
@@ -141,7 +141,7 @@ public class HeelsService : BrioIPC {
     private void OnTagChanged(int objectIndex, string tag, string? value) {
         if(objectIndex < 2 || objectIndex >= 200) return;
         if(tag != "LivePose") return;
-        LivePosePlugin.Log.Debug($"LivePose tag Changed for Object#{objectIndex}");
+        LivePose.Log.Debug($"LivePose tag Changed for Object#{objectIndex}");
         _ipcService.SetPose((ushort)objectIndex, value ?? string.Empty);
     }
 

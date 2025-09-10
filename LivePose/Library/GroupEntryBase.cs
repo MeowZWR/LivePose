@@ -72,7 +72,7 @@ public abstract class GroupEntryBase : EntryBase
         catch(System.Exception ex)
         {
 #if DEBUG
-            LivePosePlugin.Log.Error(ex, "Exception while filtering entries");
+            LivePose.Log.Error(ex, "Exception while filtering entries");
 #else
             _ = ex;
 #endif

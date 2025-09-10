@@ -16,6 +16,8 @@ using LivePose.UI.Controls.Stateless;
 using LivePose.UI.Theming;
 using OneOf.Types;
 using System.Numerics;
+using LivePose.Capabilities.Actor;
+using LivePose.IPC;
 
 namespace LivePose.UI.Windows.Specialized;
 
@@ -37,7 +39,7 @@ public class PosingOverlayToolbarWindow : Window
 
     private const string _boneFilterPopupName = "livepose_bone_filter_popup";
 
-    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, HistoryService groupedUndoService, GameInputService gameInputService, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow) : base($"{LivePosePlugin.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
+    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, HistoryService groupedUndoService, GameInputService gameInputService, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
     {
         Namespace = "livepose_posing_overlay_toolbar_namespace";
 
@@ -116,7 +118,21 @@ public class PosingOverlayToolbarWindow : Window
             return;
         
         DrawButtons(posing);
+
+
+        
+        
+        
+        if(_entityManager.TryGetCapabilityFromSelectedEntity<ActionTimelineCapability>(out var timelineCapability)) {
+            
+        }
+        
+        
         DrawBoneFilterPopup();
+        
+        
+        
+        
     }
 
     public override void PostDraw()
@@ -134,7 +150,9 @@ public class PosingOverlayToolbarWindow : Window
     {
 
         float buttonSize = ImGui.GetTextLineHeight() * 3.2f;
-
+        float buttonOperationSize = ImGui.GetTextLineHeight() * 2.4f;
+        
+        
         ImGui.PushStyleColor(ImGuiCol.Button, UIConstants.Transparent);
 
         using(ImRaii.PushFont(UiBuilder.IconFont))
@@ -170,7 +188,7 @@ public class PosingOverlayToolbarWindow : Window
 
         ImGui.Separator();
 
-        float buttonOperationSize = ImGui.GetTextLineHeight() * 2.4f;
+
 
 
         using(ImRaii.PushColor(ImGuiCol.Text, _posingService.Operation == PosingOperation.Translate ? UIConstants.ToggleButtonActive : UIConstants.ToggleButtonInactive))
@@ -230,7 +248,7 @@ public class PosingOverlayToolbarWindow : Window
 
         using(ImRaii.PushFont(UiBuilder.IconFont))
         {
-            if(ImGui.Button($"{FontAwesomeIcon.Bone.ToIconString()}###toggle_filter_window", new Vector2(buttonSize)))
+            if(ImGui.Button($"{FontAwesomeIcon.Bone.ToIconString()}###toggle_filter_window", new Vector2(buttonOperationSize)))
                 ImGui.OpenPopup(_boneFilterPopupName);
         }
         if(ImGui.IsItemHovered())
@@ -238,7 +256,7 @@ public class PosingOverlayToolbarWindow : Window
 
         ImGui.SameLine();
 
-        PosingEditorCommon.DrawMirrorModeSelect(posing, new Vector2(buttonSize));
+        PosingEditorCommon.DrawMirrorModeSelect(posing, new Vector2(buttonOperationSize));
 
         ImGui.SameLine();
 
@@ -254,13 +272,27 @@ public class PosingOverlayToolbarWindow : Window
         {
             using(ImRaii.Disabled(parentBone == null))
             {
-                if(ImGui.Button($"{FontAwesomeIcon.ArrowUp.ToIconString()}###select_parent", new Vector2(buttonSize)))
+                if(ImGui.Button($"{FontAwesomeIcon.ArrowUp.ToIconString()}###select_parent", new Vector2(buttonOperationSize)))
                     posing.Selected = new BonePoseInfoId(parentBone!.Name, parentBone!.PartialId, PoseInfoSlot.Character);
             }
         }
         if(ImGui.IsItemHovered())
             ImGui.SetTooltip("Select Parent");
 
+        ImGui.SameLine();
+
+        using(ImRaii.PushFont(UiBuilder.IconFont))
+        {
+            using(ImRaii.Disabled(posing.Selected.Value is None))
+            {
+                if(ImGui.Button($"{FontAwesomeIcon.MinusSquare.ToIconString()}###clear_selected", new Vector2(buttonOperationSize)))
+                    posing.ClearSelection();
+            }
+        }
+        if(ImGui.IsItemHovered())
+            ImGui.SetTooltip("Clear Selection");
+        
+        
         // IK RED
         bool enabled = false;
         if(posing.Selected.Value is BonePoseInfoId boneId)
@@ -292,18 +324,27 @@ public class PosingOverlayToolbarWindow : Window
         if(ImGui.IsItemHovered())
             ImGui.SetTooltip("Bone Search");
 
-        ImGui.SameLine();
+        if(_entityManager.TryGetCapabilityFromSelectedEntity<ActionTimelineCapability>(out var timelineCapability)) {
+            ImGui.SameLine();
 
-        using(ImRaii.PushFont(UiBuilder.IconFont))
-        {
-            using(ImRaii.Disabled(posing.Selected.Value is None))
-            {
-                if(ImGui.Button($"{FontAwesomeIcon.MinusSquare.ToIconString()}###clear_selected", new Vector2(buttonSize)))
-                    posing.ClearSelection();
+            using(ImRaii.PushFont(UiBuilder.IconFont)) {
+                if(ImGui.Button($"{FontAwesomeIcon.Snowflake.ToIconString()}###freeze_toggle", new Vector2(buttonSize))) {
+                    if(timelineCapability.SpeedMultiplierOverride == 0) {
+                        timelineCapability.ResetOverallSpeedOverride();
+                    } else {
+                        timelineCapability.SetOverallSpeedOverride(0);
+                    }
+                    
+                    if(timelineCapability.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                        service.SetPlayerPoseTag();
+                    }
+                }
             }
+
+            if(ImGui.IsItemHovered())
+                ImGui.SetTooltip($"{(timelineCapability.SpeedMultiplierOverride == 0 ? "Un-" : "")}Freeze Character");
+
         }
-        if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Clear Selection");
 
         ImGui.Separator();
 

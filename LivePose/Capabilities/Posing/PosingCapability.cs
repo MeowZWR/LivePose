@@ -131,7 +131,7 @@ public class PosingCapability : ActorCharacterCapability
         }
         catch
         {
-            LivePosePlugin.NotifyError("Invalid pose file.");
+            LivePose.NotifyError("Invalid pose file.");
         }
     }
 
@@ -140,7 +140,7 @@ public class PosingCapability : ActorCharacterCapability
     {
         if(Actor.TryGetCapability<ActionTimelineCapability>(out var actionTimeline))
         {
-            LivePosePlugin.Log.Verbose($"Importing Pose... {asExpression} {asScene} {asIPCpose} {asBody} {freezeOnLoad}");
+            LivePose.Log.Verbose($"Importing Pose... {asExpression} {asScene} {asIPCpose} {asBody} {freezeOnLoad}");
 
             actionTimeline.StopSpeedAndResetTimeline(() =>
             {
@@ -151,7 +151,7 @@ public class PosingCapability : ActorCharacterCapability
         }
         else
         {
-            LivePosePlugin.Log.Warning($"Actor did not have ActionTimelineCapability while Importing a Pose... {asExpression} {asScene} {asIPCpose} {asBody} {freezeOnLoad}");
+            LivePose.Log.Warning($"Actor did not have ActionTimelineCapability while Importing a Pose... {asExpression} {asScene} {asIPCpose} {asBody} {freezeOnLoad}");
         }
     }
 
@@ -168,8 +168,8 @@ public class PosingCapability : ActorCharacterCapability
 
         if(poseFile.Bones.Count == 0 && poseFile.MainHand.Count == 0 && poseFile.OffHand.Count == 0)
         {
-            LivePosePlugin.NotifyError("Invalid pose file.");
-            LivePosePlugin.Log.Verbose($"Invalid pose file. {reconcile} {reset} {generateSnapshot} {asExpression} {expressionPhase2} {asScene} {asIPCpose} {asBody}");
+            LivePose.NotifyError("Invalid pose file.");
+            LivePose.Log.Verbose($"Invalid pose file. {reconcile} {reset} {generateSnapshot} {asExpression} {expressionPhase2} {asScene} {asIPCpose} {asBody}");
             return;
         }
 
@@ -178,7 +178,7 @@ public class PosingCapability : ActorCharacterCapability
         bool applyModelTransform = false;
         if(asExpression)
         {
-            LivePosePlugin.Log.Info("Loading as Expression");
+            LivePose.Log.Info("Loading as Expression");
 
             options = _posingService.ExpressionOptions;
             tempPose = GeneratePoseFile();
@@ -284,7 +284,7 @@ public class PosingCapability : ActorCharacterCapability
             ModelPosing.Transform = redoStack.ModelTransform;
         }
         
-        if(GameObject.ObjectIndex == 0 && LivePosePlugin.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
+        if(GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
             heelsService.SetPlayerPoseTag();
         }
     }
@@ -306,7 +306,7 @@ public class PosingCapability : ActorCharacterCapability
             ModelPosing.Transform = applicable.ModelTransform;
         }
 
-        if(GameObject.ObjectIndex == 0 && LivePosePlugin.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
+        if(GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
             heelsService.SetPlayerPoseTag();
         }
         

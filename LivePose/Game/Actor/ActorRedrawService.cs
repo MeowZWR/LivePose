@@ -27,7 +27,7 @@ public class ActorRedrawService(IFramework framework, IObjectTable objectTable)
 
     public async Task<RedrawResult> Redraw(IGameObject go)
     {
-        LivePosePlugin.Log.Debug($"Beginning Brio redraw on gameobject {go.ObjectIndex}...");
+        LivePose.Log.Debug($"Beginning Brio redraw on gameobject {go.ObjectIndex}...");
         DisableDraw(go);
         try
         {
@@ -35,19 +35,19 @@ public class ActorRedrawService(IFramework framework, IObjectTable objectTable)
             await DrawWhenReady(go);
             await WaitForDrawing(go);
             ActorRedrawEvent?.Invoke(go, RedrawStage.After);
-            LivePosePlugin.Log.Debug($"Brio redraw complete on gameobject {go.ObjectIndex}.");
+            LivePose.Log.Debug($"Brio redraw complete on gameobject {go.ObjectIndex}.");
             return RedrawResult.Full;
         }
         catch(Exception e)
         {
-            LivePosePlugin.Log.Error(e, $"Brio redraw failed on gameobject {go.ObjectIndex}.");
+            LivePose.Log.Error(e, $"Brio redraw failed on gameobject {go.ObjectIndex}.");
             return RedrawResult.Failed;
         }
     }
 
     public async Task RedrawAndWait(IGameObject go)
     {
-        LivePosePlugin.Log.Debug($"Beginning Brio redraw on gameobject {go.ObjectIndex}...");
+        LivePose.Log.Debug($"Beginning Brio redraw on gameobject {go.ObjectIndex}...");
         try
         {
             DisableDraw(go);
@@ -59,7 +59,7 @@ public class ActorRedrawService(IFramework framework, IObjectTable objectTable)
             {
                 if(await _framework.RunOnFrameworkThread(() => IsDrawing(go)))
                 {
-                    LivePosePlugin.Log.Debug($"Brio redraw complete on gameobject {go.ObjectIndex}.");
+                    LivePose.Log.Debug($"Brio redraw complete on gameobject {go.ObjectIndex}.");
 
                     return;
                 }
@@ -69,7 +69,7 @@ public class ActorRedrawService(IFramework framework, IObjectTable objectTable)
         }
         catch(Exception e)
         {
-            LivePosePlugin.Log.Error(e, $"Brio redraw failed on gameobject {go.ObjectIndex}.");
+            LivePose.Log.Error(e, $"Brio redraw failed on gameobject {go.ObjectIndex}.");
         }
     }
 

@@ -71,21 +71,21 @@ public abstract class BrioIPC : IBrioIPC
             bool installed = GetPluginInterface().InstalledPlugins.Any(x => x.Name == Name && x.IsLoaded == true);
             if(!installed)
             {
-                LivePosePlugin.Log.Verbose($"{Name} not present");
+                LivePose.Log.Verbose($"{Name} not present");
                 return _lastIPCStatus = IPCStatus.NotInstalled;
             }
 
             var (major, minor) = GetAPIVersion();
             if(major != APIMajor || minor < APIMinor)
             {
-                LivePosePlugin.Log.Debug($"{Name} API Version mismatch, found v{major}.{minor}");
+                LivePose.Log.Debug($"{Name} API Version mismatch, found v{major}.{minor}");
                 return _lastIPCStatus = IPCStatus.VersionMismatch;
             }
             return _lastIPCStatus = IPCStatus.Available;
         }
         catch(Exception ex)
         {
-            LivePosePlugin.Log.Debug(ex, $"{Name} initialize error");
+            LivePose.Log.Debug(ex, $"{Name} initialize error");
             return _lastIPCStatus = IPCStatus.Error;
         }
     }

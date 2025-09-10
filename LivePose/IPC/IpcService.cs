@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using LivePose.Core;
 using LivePose.Entities.Actor;
+using LivePose.Game.Actor;
 
 namespace LivePose.IPC;
 public class IpcService : IDisposable
@@ -144,9 +145,6 @@ public class IpcService : IDisposable
         
         data.Frozen = timelineCapability.SpeedMultiplierOverride == 0;
         
-        
-        if(data.IsDefault) return string.Empty;
-        
         return data.Serialize();
     }
 
@@ -174,15 +172,20 @@ public class IpcService : IDisposable
             return;
         }
 
+        if(!actorEntity.TryGetCapability<ActionTimelineCapability>(out var timelineCapability)) {
+            _pluginLog.Warning($"Attempted to set Object#{objectIndex} pose. No ActionTimelineCapability found.");
+            return;
+        }
+
         var livePoseData = LivePoseData.Deserialize(data);
         
         _framework.RunOnTick(() => {
             skeletonPosingCapability.ResetPose();
             if(livePoseData == null) {
-                LivePosePlugin.Log.Warning("Pose is null");
+                LivePose.Log.Warning("Pose is null");
                 return;
             }
-            LivePosePlugin.Log.Warning("Applying Pose");
+            LivePose.Log.Warning("Applying Pose");
             foreach(var (b, list) in livePoseData.Pose) {
                 var bone = skeletonPosingCapability.GetBone(b, PoseInfoSlot.Character);
                 if(bone == null) continue;
@@ -191,10 +194,15 @@ public class IpcService : IDisposable
                     bonePose.Apply(s.Transform, null, s.Propogate, TransformComponents.All, s.BoneIkInfo);
                 }
             }
+
+            if(livePoseData.Frozen) {
+                timelineCapability.SetOverallSpeedOverride(0f);
+            } else {
+                timelineCapability.ResetOverallSpeedOverride();
+            }
+            
         }, delayTicks: 1);
     }
-    
-    
     
     public void Dispose()
     {

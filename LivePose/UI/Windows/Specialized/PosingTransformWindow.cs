@@ -25,7 +25,7 @@ public class PosingTransformWindow : Window
 
     private Matrix4x4? _trackingMatrix;
 
-    public PosingTransformWindow(EntityManager entityManager, PosingService posingService, IClientState clientState) : base($"{LivePosePlugin.Name} - TRANSFORM###livepose_transform_window", ImGuiWindowFlags.AlwaysAutoResize)
+    public PosingTransformWindow(EntityManager entityManager, PosingService posingService, IClientState clientState) : base($"{LivePose.Name} - TRANSFORM###livepose_transform_window", ImGuiWindowFlags.AlwaysAutoResize)
     {
         Namespace = "livepose_transform_namespace";
 
@@ -194,7 +194,7 @@ public class PosingTransformWindow : Window
             );
             
             if(posing.GameObject.ObjectIndex == 0) {
-                if(LivePosePlugin.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                if(LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
                     service.SetPlayerPoseTag();
                 }
             }

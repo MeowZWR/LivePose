@@ -100,7 +100,7 @@ public class LibraryWindow : Window
         PosingService posingService,
         IFramework frameworkService,
         SettingsWindow settingsWindow)
-        : base($"{LivePosePlugin.Name} LIBRARY###livepose_library_window")
+        : base($"{LivePose.Name} LIBRARY###livepose_library_window")
     {
         this.Namespace = "livepose_library_namespace";
 
@@ -663,7 +663,7 @@ public class LibraryWindow : Window
                     }
                     else
                     {
-                        LivePosePlugin.Log.Warning($"<{blankWidth},{lineHeight}>");
+                        LivePose.Log.Warning($"<{blankWidth},{lineHeight}>");
                     }
 
                     // Refresh Button
@@ -1015,7 +1015,7 @@ public class LibraryWindow : Window
             if(ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
             {
                 _toOpen = entry;
-                LivePosePlugin.Log.Verbose("IsMouseDoubleClicked");
+                LivePose.Log.Verbose("IsMouseDoubleClicked");
             }
         }
 
@@ -1123,7 +1123,7 @@ public class LibraryWindow : Window
             }
             catch(Exception ex)
             {
-                LivePosePlugin.Log.Error(ex, "Exception while invoking library OnOpen Callback!");
+                LivePose.Log.Error(ex, "Exception while invoking library OnOpen Callback!");
             }
         }
     }
@@ -1151,7 +1151,7 @@ public class LibraryWindow : Window
         }
         catch(Exception ex)
         {
-            LivePosePlugin.Log.Error(ex, "Exception while Refreshing!");
+            LivePose.Log.Error(ex, "Exception while Refreshing!");
         }
     }
 

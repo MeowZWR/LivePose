@@ -138,7 +138,7 @@ public class FileUIHelpers
 
             using(var popup2 = ImRaii.Popup("import_optionsImportPoseMenuPopup"))
             {
-                if(popup2.Success && showImportOptions && LivePosePlugin.TryGetService<PosingService>(out var service))
+                if(popup2.Success && showImportOptions && LivePose.TryGetService<PosingService>(out var service))
                 {
                     PosingEditorCommon.DrawImportOptionEditor(service.DefaultImporterOptions, true);
                 }
@@ -176,7 +176,7 @@ public class FileUIHelpers
                 transformComponents: null, applyModelTransformOverride: applyModelTransformOverride);
 
             if(capability.GameObject.ObjectIndex == 0) {
-                if(LivePosePlugin.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                if(LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
                     service.SetPlayerPoseTag();
                 }
             }
@@ -201,7 +201,7 @@ public class FileUIHelpers
         }
         
         if(capability.GameObject.ObjectIndex == 0) {
-            if(LivePosePlugin.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+            if(LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
                 service.SetPlayerPoseTag();
             }
         }

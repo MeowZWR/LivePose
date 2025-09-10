@@ -16,7 +16,7 @@ public class LegacyGlassesSaveConverter : JsonConverter<AnamnesisCharaFile.Glass
         }
         catch(Exception)
         {
-            LivePosePlugin.Log.Fatal($"Loaded GS Exception -- {typeToConvert}");
+            LivePose.Log.Fatal($"Loaded GS Exception -- {typeToConvert}");
 
             return new AnamnesisCharaFile.GlassesSave { GlassesId = 0 };
         }

@@ -70,7 +70,7 @@ public unsafe class GPoseService : IDisposable
     public void TriggerGPoseChange()
     {
         var gposing = IsGPosing;
-        LivePosePlugin.Log.Debug($"GPose state changed to {gposing}");
+        LivePose.Log.Debug($"GPose state changed to {gposing}");
         OnGPoseStateChange?.Invoke(gposing);
     }
 

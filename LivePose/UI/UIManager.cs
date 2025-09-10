@@ -82,7 +82,7 @@ public class UIManager : IDisposable
         _overlayTransformWindow = overlayTransformWindow;
         _graphicalWindow = graphicalWindow;
 
-        _windowSystem = new(LivePosePlugin.Name);
+        _windowSystem = new(LivePose.Name);
 
         _windowSystem.AddWindow(_mainWindow);
         _windowSystem.AddWindow(_settingsWindow);

@@ -310,7 +310,7 @@ public unsafe class SkeletonService : IDisposable
 
     private void RefreshSkeletonCache()
     {
-        LivePosePlugin.Log.Debug("Refreshing skeleton cache...");
+        LivePose.Log.Debug("Refreshing skeleton cache...");
         _skeletonToPosingCapability.Clear();
         _skeletons.Clear();
         foreach(var actor in _monitorService.ObjectTable)
@@ -324,7 +324,7 @@ public unsafe class SkeletonService : IDisposable
                 }
             }
         }
-        LivePosePlugin.Log.Debug("Skeleton cache refreshed.");
+        LivePose.Log.Debug("Skeleton cache refreshed.");
     }
 
     private void ClearSkeleton(Skeleton skeleton)
@@ -385,7 +385,7 @@ public unsafe class SkeletonService : IDisposable
         }
         catch(Exception e)
         {
-            LivePosePlugin.Log.Error(e, "Error during skeleton caching");
+            LivePose.Log.Error(e, "Error during skeleton caching");
         }
     }
 
@@ -397,7 +397,7 @@ public unsafe class SkeletonService : IDisposable
         }
         catch(Exception e)
         {
-            LivePosePlugin.Log.Error(e, "Error during skeleton cleanup");
+            LivePose.Log.Error(e, "Error during skeleton cleanup");
         }
     }
 
@@ -410,7 +410,7 @@ public unsafe class SkeletonService : IDisposable
         }
         catch(Exception e)
         {
-            LivePosePlugin.Log.Error(e, "Error during skeleton update");
+            LivePose.Log.Error(e, "Error during skeleton update");
         }
         return result;
     }
@@ -424,7 +424,7 @@ public unsafe class SkeletonService : IDisposable
         }
         catch(Exception e)
         {
-            LivePosePlugin.Log.Error(e, "Error during skeleton finalization");
+            LivePose.Log.Error(e, "Error during skeleton finalization");
         }
     }
 

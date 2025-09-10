@@ -286,7 +286,7 @@ public class LibraryManager : IDisposable
         }
         catch(Exception ex)
         {
-            LivePosePlugin.Log.Error(ex, "Error during library scan");
+            LivePose.Log.Error(ex, "Error during library scan");
         }
 
         IsScanning = false;
@@ -306,7 +306,7 @@ public class LibraryManager : IDisposable
         }
         catch(Exception ex)
         {
-            LivePosePlugin.Log.Error(ex, $"Error in library source: {source.Name}");
+            LivePose.Log.Error(ex, $"Error in library source: {source.Name}");
         }
     }
 }

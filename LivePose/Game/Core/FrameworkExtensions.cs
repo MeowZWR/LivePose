@@ -70,7 +70,7 @@ public static class FrameworkExtensions
         }
         catch(Exception ex)
         {
-            LivePosePlugin.Log.Warning(ex, $"Exception running condition action. {task}");
+            LivePose.Log.Warning(ex, $"Exception running condition action. {task}");
             CompleteTask(task, false, ex);
             return;
         }
@@ -91,7 +91,7 @@ public static class FrameworkExtensions
         {
             if(thisTick >= task.MaxFrames)
             {
-                LivePosePlugin.Log.Warning($"Task timed out. {task}");
+                LivePose.Log.Warning($"Task timed out. {task}");
                 CompleteTask(task, false, null);
             }
             else
@@ -118,7 +118,7 @@ public static class FrameworkExtensions
         }
         catch(Exception ex)
         {
-            LivePosePlugin.Log.Warning(ex, $"Exception running completion action. {task}");
+            LivePose.Log.Warning(ex, $"Exception running completion action. {task}");
             task.CallbackTask.SetException(ex);
         }
     }

@@ -66,7 +66,7 @@ public class RenameActorModal
                         {
                             if(currentActorEntity.IsAttached)
                             {
-                                LivePosePlugin.Log.Info($"Renamed {currentActorEntity.FriendlyName} -> {currentActorName}");
+                                LivePose.Log.Info($"Renamed {currentActorEntity.FriendlyName} -> {currentActorName}");
 
                                 currentActorEntity.FriendlyName = currentActorName;
                             }
@@ -80,7 +80,7 @@ public class RenameActorModal
                     {
                         if(currentActorEntity.IsAttached)
                         {
-                            LivePosePlugin.Log.Info($"NameReset {currentActorEntity.FriendlyName} -> {currentActorEntity.FriendlyName = string.Empty}");
+                            LivePose.Log.Info($"NameReset {currentActorEntity.FriendlyName} -> {currentActorEntity.FriendlyName = string.Empty}");
                         }
                         Close();
                     }
@@ -96,7 +96,7 @@ public class RenameActorModal
                     {
                         if(currentActorEntity.IsAttached)
                         {
-                            LivePosePlugin.Log.Info($"Renamed {currentActorEntity.FriendlyName} -> {currentActorName} (via Enter Key)");
+                            LivePose.Log.Info($"Renamed {currentActorEntity.FriendlyName} -> {currentActorName} (via Enter Key)");
                             currentActorEntity.FriendlyName = currentActorName;
                         }
                         Close();

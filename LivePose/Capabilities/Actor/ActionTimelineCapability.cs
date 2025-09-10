@@ -1,125 +1,53 @@
 ﻿using LivePose.Game.Actor.Extensions;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using LivePose.Config;
-using LivePose.Entities;
 using LivePose.Entities.Actor;
-using LivePose.Game.Actor;
-using LivePose.Game.Posing;
-using LivePose.Game.Types;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
+using System.Numerics;
 
 namespace LivePose.Capabilities.Actor;
 
-public class ActionTimelineCapability : ActorCharacterCapability
-{
-    private readonly IFramework _framework;
-
+public class ActionTimelineCapability(IFramework framework, ActorEntity parent) : ActorCharacterCapability(parent) {
     public unsafe float SpeedMultiplier => SpeedMultiplierOverride ?? Character.Native()->Timeline.OverallSpeed;
-    public bool HasSpeedMultiplierOverride => SpeedMultiplierOverride.HasValue;
-    public float? SpeedMultiplierOverride { get; private set; }
-    public bool IsPaused { get; private set; } = false;
 
-    public bool HasOverride => (SlotedBlendAnimation != 0 || SlotedBaseAnimation != 0) && (HasBaseOverride || HasSpeedMultiplierOverride || DoBaseInterrupt is false || LipsOverride > 0);
+    public Vector3? SpeedMultiplierPosition { get; private set; }
 
-    public bool DoBaseInterrupt = true;
-    public int SlotedBaseAnimation = 0;
-    public int SlotedBlendAnimation = 0;
+    public float? SpeedMultiplierOverride {
+        get {
+            if(SpeedMultiplierPosition == null || Vector3.DistanceSquared(SpeedMultiplierPosition.Value, Character.Position) > 0.01f) {
+                field = null;
+            }
 
-    public unsafe ushort LipsOverride
-    {
-        get => Character.Native()->Timeline.LipsOverride;
-        set => Character.Native()->Timeline.SetLipsOverrideTimeline(value);
+            return field;
+        }
+
+        private set;
     }
 
-    private readonly Dictionary<ActionTimelineService.ActionTimelineSlots, float> _actionTimelineSlotSpeedOverrides = [];
-    private OriginalBaseAnimation? _originalBaseAnimation = null;
-    private bool _slotsDirty = false;
-
-    public ActionTimelineCapability(IFramework framework, ActorEntity parent, EntityManager entityManager, PhysicsService physicsService, ConfigurationService configService) : base(parent)
-    {
-        _framework = framework;
-
-        // Widget = new ActionTimelineWidget(this, entityManager, physicsService, configService);
-    }
-
-    public unsafe void SetOverallSpeedOverride(float speed)
-    {
+    public unsafe void SetOverallSpeedOverride(float speed) {
+        SpeedMultiplierPosition = Character.Position;
         SpeedMultiplierOverride = speed;
         Character.Native()->Timeline.OverallSpeed = speed;
     }
 
-    public void ResetOverallSpeedOverride()
-    {
+    public void ResetOverallSpeedOverride() {
+        SpeedMultiplierPosition = null;
         SpeedMultiplierOverride = null;
     }
 
-    public unsafe ActionTimelineUnion GetSlotAction(ActionTimelineService.ActionTimelineSlots slot)
-    {
-        var timeline = Character.Native()->Timeline.TimelineSequencer.TimelineIds[(int)slot];
-        return new ActionTimelineId(timeline);
-    }
-
-    public unsafe float GetSlotSpeed(ActionTimelineService.ActionTimelineSlots slot)
-    {
-        if(_actionTimelineSlotSpeedOverrides.TryGetValue(slot, out float speed))
-            return speed;
-
-        return Character.Native()->Timeline.TimelineSequencer.TimelineSpeeds[(int)slot];
-    }
-
-    public unsafe void SetSlotSpeedOverride(ActionTimelineService.ActionTimelineSlots slot, float speed)
-    {
-        _actionTimelineSlotSpeedOverrides[slot] = speed;
-        Character.Native()->Timeline.TimelineSequencer.SetSlotSpeed((uint)slot, speed);
-        _slotsDirty = true;
-    }
-
-    public bool HasSlotSpeedOverride(ActionTimelineService.ActionTimelineSlots slot)
-    {
-        return _actionTimelineSlotSpeedOverrides.ContainsKey(slot);
-    }
-
-    public void ResetSlotSpeedOverride(ActionTimelineService.ActionTimelineSlots slot)
-    {
-        _actionTimelineSlotSpeedOverrides.Remove(slot);
-        _slotsDirty = true;
-    }
-
-    public bool CheckAndResetDirtySlots() => _slotsDirty && !(_slotsDirty = false);
-
-    public unsafe void ApplyBaseOverride(ushort actionTimeline, bool interrupt)
-    {
-        if(_originalBaseAnimation == null)
-            _originalBaseAnimation = new(Character.Native()->Mode, Character.Native()->ModeParam, Character.Native()->Timeline.BaseOverride);
-
-        var chara = Character.Native();
-
-        chara->SetMode(CharacterModes.AnimLock, 0);
-        chara->Timeline.BaseOverride = actionTimeline;
-
-        if(interrupt)
-            BlendTimeline(actionTimeline);
-    }
-
-    public async void StopSpeedAndResetTimeline(Action? postStopAction = null, bool resetSpeedAfterAction = false)
-    {
-        LivePosePlugin.Log.Verbose($"StopSpeedAndResetTimeline {postStopAction is not null} {resetSpeedAfterAction}");
+    public async void StopSpeedAndResetTimeline(Action? postStopAction = null, bool resetSpeedAfterAction = false) {
+        LivePose.Log.Verbose($"StopSpeedAndResetTimeline {postStopAction is not null} {resetSpeedAfterAction}");
 
         var oldSpeed = SpeedMultiplier;
 
         SetOverallSpeedOverride(0);
 
-        LivePosePlugin.Log.Verbose($"SetOverallSpeedOverride {oldSpeed} {SpeedMultiplier}");
+        LivePose.Log.Verbose($"SetOverallSpeedOverride {oldSpeed} {SpeedMultiplier}");
 
-        await _framework.RunOnTick(() =>
-        {
-            unsafe
-            {
+        await framework.RunOnTick(() => {
+            unsafe {
                 var drawObj = Character.Native()->GameObject.DrawObject;
                 if(drawObj == null)
                     return;
@@ -132,16 +60,14 @@ public class ActionTimelineCapability : ActorCharacterCapability
                     return;
 
                 var skeleton = charaBase->Skeleton;
-                for(int p = 0; p < skeleton->PartialSkeletonCount; ++p)
-                {
+                for(int p = 0; p < skeleton->PartialSkeletonCount; ++p) {
                     var partial = &skeleton->PartialSkeletons[p];
 
                     var animatedSkele = partial->GetHavokAnimatedSkeleton(0);
                     if(animatedSkele == null)
                         continue;
 
-                    for(int c = 0; c < animatedSkele->AnimationControls.Length; ++c)
-                    {
+                    for(int c = 0; c < animatedSkele->AnimationControls.Length; ++c) {
                         var control = animatedSkele->AnimationControls[c].Value;
                         if(control == null)
                             continue;
@@ -154,10 +80,9 @@ public class ActionTimelineCapability : ActorCharacterCapability
                         if(anim == null)
                             continue;
 
-                        if(control->PlaybackSpeed == 0)
-                        {
+                        if(control->PlaybackSpeed == 0) {
                             control->hkaAnimationControl.LocalTime = 0;
-                            LivePosePlugin.Log.Verbose($"hkaAnimationControl");
+                            LivePose.Log.Verbose($"hkaAnimationControl");
                         }
                     }
                 }
@@ -166,81 +91,23 @@ public class ActionTimelineCapability : ActorCharacterCapability
 
         postStopAction?.Invoke();
 
-        LivePosePlugin.Log.Verbose($"postStopAction Invoke: {postStopAction is not null}");
+        LivePose.Log.Verbose($"postStopAction Invoke: {postStopAction is not null}");
 
-        if(resetSpeedAfterAction)
-        {
-            await _framework.RunOnTick(() =>
-            {
+        if(resetSpeedAfterAction) {
+            await framework.RunOnTick(() => {
                 SetOverallSpeedOverride(oldSpeed);
 
-                LivePosePlugin.Log.Verbose($"SetOverallSpeedOverride {SpeedMultiplier}");
+                LivePose.Log.Verbose($"SetOverallSpeedOverride {SpeedMultiplier}");
             }, delayTicks: 2);
         }
     }
 
-    public unsafe void ResetBaseOverride()
-    {
-        if(_originalBaseAnimation == null)
-            return;
-
-        var chara = Character.Native();
-
-        chara->Timeline.BaseOverride = _originalBaseAnimation.Value.OriginalTimeline;
-        chara->Mode = _originalBaseAnimation.Value.OriginalMode;
-        chara->ModeParam = _originalBaseAnimation.Value.OriginalInput;
-
-        _originalBaseAnimation = null;
-
-        BlendTimeline(3);
-    }
-
-    public bool HasBaseOverride => _originalBaseAnimation != null;
-
-    public unsafe void BlendTimeline(ushort actionTimeline)
-    {
-        Character.Native()->Timeline.TimelineSequencer.PlayTimeline(actionTimeline);
-    }
-
-    public void Stop()
-    {
-        if(HasBaseOverride)
-        {
-            ResetBaseOverride();
-            ResetOverallSpeedOverride();
-        }
-    }
-
-    public void Reset()
-    {
-        DoBaseInterrupt = true;
-
-        SlotedBaseAnimation = 0;
-        SlotedBlendAnimation = 0;
-        LipsOverride = 0;
-
-        IsPaused = false;
-
-        ResetBaseOverride();
+    public override void Dispose() {
         ResetOverallSpeedOverride();
-    }
-
-    public override void Dispose()
-    {
-        SpeedMultiplierOverride = null;
-        _actionTimelineSlotSpeedOverrides.Clear();
-        ResetBaseOverride();
-
         base.Dispose();
     }
 
-    public static ActionTimelineCapability? CreateIfEligible(IServiceProvider provider, ActorEntity entity)
-    {
-        if(entity.GameObject is ICharacter)
-            return ActivatorUtilities.CreateInstance<ActionTimelineCapability>(provider, entity);
-
-        return null;
+    public static ActionTimelineCapability? CreateIfEligible(IServiceProvider provider, ActorEntity entity) {
+        return entity.GameObject is ICharacter ? ActivatorUtilities.CreateInstance<ActionTimelineCapability>(provider, entity) : null;
     }
-
-    public record struct OriginalBaseAnimation(CharacterModes OriginalMode, byte OriginalInput, ushort OriginalTimeline);
 }

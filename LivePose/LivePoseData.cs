@@ -62,19 +62,8 @@ public class LivePoseData {
     
     
     public bool Frozen = false;
-    
-    public bool IsDefault {
-        get {
-            if(Pose.Count > 0) return false;
-            if(Frozen) return false;
-            
-            return true;
-        }
-    }
 
     public string Serialize() {
-        if(IsDefault) return string.Empty;
-        
         return JsonConvert.SerializeObject(this);
     }
 

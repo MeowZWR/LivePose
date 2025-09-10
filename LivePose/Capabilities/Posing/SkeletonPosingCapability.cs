@@ -46,7 +46,7 @@ namespace LivePose.Capabilities.Posing
         public void ResetPose()
         {
             if(GameObject.ObjectIndex == 0) {
-                if(LivePosePlugin.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
+                if(LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
                     heelsService.SetPlayerPoseTag();
                 }
             }

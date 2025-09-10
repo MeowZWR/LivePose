@@ -13,7 +13,7 @@ public class SettingsWindow : Window
 {
     private readonly ConfigurationService _configurationService;
 
-    public SettingsWindow(ConfigurationService configurationService) : base($"{LivePosePlugin.Name} SETTINGS###livepose_settings_window", ImGuiWindowFlags.NoResize)
+    public SettingsWindow(ConfigurationService configurationService) : base($"{LivePose.Name} SETTINGS###livepose_settings_window", ImGuiWindowFlags.NoResize)
     {
         Namespace = "livepose_settings_namespace";
 

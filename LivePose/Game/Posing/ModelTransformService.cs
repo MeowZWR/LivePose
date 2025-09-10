@@ -7,12 +7,6 @@ namespace LivePose.Game.Posing;
 
 public unsafe class ModelTransformService : IDisposable
 {
-
-    public ModelTransformService()
-    {
-        
-    }
-
     public unsafe Transform GetTransform(IGameObject go)
     {
         var native = go.Native();
@@ -30,8 +24,6 @@ public unsafe class ModelTransformService : IDisposable
         }
         ;
     }
-
-    public unsafe void SetTransform(IGameObject go, Transform transform) { }
 
     public void Dispose() {
         

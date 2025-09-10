@@ -59,7 +59,7 @@ public class ConfigurationService : IDisposable
     private static bool s_isDebug => false;
 #endif
 
-    private static readonly string s_version = typeof(LivePosePlugin).Assembly.GetName().Version?.ToString() ?? "(Unknown Version)";
+    private static readonly string s_version = typeof(LivePose).Assembly.GetName().Version?.ToString() ?? "(Unknown Version)";
 
     public bool IsDebug => s_isDebug || Configuration.ForceDebug;
     public string Version => IsDebug ? "(Debug)" : $"v{s_version}";
