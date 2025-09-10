@@ -2,9 +2,13 @@
 
 namespace LivePose;
 
-public class LivePosePlugin(IDalamudPluginInterface pluginInterface) : IDalamudPlugin {
+internal class LivePosePlugin : IDalamudPlugin {
 
-    private readonly LivePose livePose = new(pluginInterface);
+    private readonly LivePose livePose;
+    
+    public LivePosePlugin(IDalamudPluginInterface pluginInterface) {
+        livePose = new LivePose(this, pluginInterface);
+    }
 
     public void Dispose() {
         livePose.Dispose();

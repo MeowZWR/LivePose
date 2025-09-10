@@ -1,6 +1,10 @@
 ﻿using Dalamud.Plugin;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using Dalamud.Configuration;
+using Newtonsoft.Json;
 
 namespace LivePose.Config;
 
@@ -21,16 +25,32 @@ public class ConfigurationService : IDisposable
     {
         Instance = this;
         _pluginInterface = pluginInterface;
-        Configuration = _pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
-        if(Configuration.Posing.EnabledBoneCategories == null) {
-            Configuration.Posing.EnabledBoneCategories = ["head", "body", "legs", "tail", "hands"];
-        }
+        Configuration = Load() ?? new Configuration();
+        Configuration.Posing.EnabledBoneCategories ??= ["head", "body", "legs", "tail", "hands"];
+    }
+
+    private Configuration? Load() {
+        var file = Path.Join(ConfigDirectory, "LivePose.Config.json");
+        if(!File.Exists(file)) return null;
+        var json = File.ReadAllText(file);
+        return JsonConvert.DeserializeObject<Configuration>(json, new JsonSerializerSettings() {
+            TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
+            TypeNameHandling = TypeNameHandling.None
+        });
     }
 
     public void Save()
     {
-        _pluginInterface.SavePluginConfig(Configuration);
+        var file = Path.Join(ConfigDirectory, "LivePose.Config.json");
+        if (!Directory.Exists(ConfigDirectory)) Directory.CreateDirectory(ConfigDirectory);
+        
+        var json = JsonConvert.SerializeObject(Configuration,  Formatting.Indented, new JsonSerializerSettings() {
+            TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
+            TypeNameHandling = TypeNameHandling.None
+        });
+        
+        File.WriteAllText(file, json);
     }
 
     public void ApplyChange(bool save = true)

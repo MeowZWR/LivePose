@@ -22,19 +22,32 @@ using LivePose.UI.Windows.Specialized;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
+using LivePose.Capabilities.Posing;
+using LivePose.Entities.Core;
 
 namespace LivePose;
 
 public class LivePose : IDisposable {
-    public const string Name = "LivePose";
+    public static string Name { get; private set; }
 
+    internal static bool IsPlugin;
+    
     private static ServiceProvider? _services = null;
-
     public static IPluginLog Log { get; private set; } = null!;
     public static IFramework Framework { get; private set; } = null!;
+    
+    internal LivePose(LivePosePlugin plugin, IDalamudPluginInterface pluginInterface) {
+        IsPlugin = true;
+        Initialize(pluginInterface);
+    }
 
-    public LivePose(IDalamudPluginInterface pluginInterface)
-    {
+    public LivePose(IDalamudPluginInterface pluginInterface, string name = "LivePose") {
+        Name = name;
+        Initialize(pluginInterface);
+    }
+    
+    private void Initialize(IDalamudPluginInterface pluginInterface) {
+        
         // Setup dalamud services
         var dalamudServices = new DalamudServices(pluginInterface);
         Log = dalamudServices.Log;
@@ -133,7 +146,9 @@ public class LivePose : IDisposable {
         serviceCollection.AddSingleton<ActorRedrawService>();
         serviceCollection.AddSingleton<ActionTimelineService>();
         serviceCollection.AddSingleton<GPoseService>();
-        serviceCollection.AddSingleton<CommandHandlerService>();
+        if(!IsPlugin) {
+            serviceCollection.AddSingleton<CommandHandlerService>();
+        }
         serviceCollection.AddSingleton<ModelTransformService>();
         serviceCollection.AddSingleton<TimeService>();
         serviceCollection.AddSingleton<WeatherService>();
@@ -201,5 +216,15 @@ public class LivePose : IDisposable {
     public void Dispose()
     {
         _services?.Dispose();
+    }
+
+    public void ToggleOverlay() {
+        if(!TryGetService<IClientState>(out var clientState)) return;
+        if(clientState.LocalPlayer == null) return;
+        if(!TryGetService<EntityManager>(out var manager)) return;
+        if(!manager.TryGetEntity(new EntityId(clientState.LocalPlayer), out var entity)) return;
+        if(!entity.TryGetCapability<PosingCapability>(out var posingCapability)) return;
+        manager.SetSelectedEntity(entity);
+        posingCapability.OverlayOpen = !posingCapability.OverlayOpen;
     }
 }

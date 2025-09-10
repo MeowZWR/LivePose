@@ -93,7 +93,10 @@ public class UIManager : IDisposable
         _windowSystem.AddWindow(_graphicalWindow);
 
         _pluginInterface.UiBuilder.Draw += DrawUI;
-        _pluginInterface.UiBuilder.OpenConfigUi += ShowSettingsWindow;
+
+        if(LivePose.IsPlugin) {
+            _pluginInterface.UiBuilder.OpenConfigUi += ShowSettingsWindow;
+        }
     }
 
     public void ToggleGraphicalPosingWindow()
