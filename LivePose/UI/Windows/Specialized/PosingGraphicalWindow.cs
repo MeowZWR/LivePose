@@ -138,17 +138,19 @@ public class PosingGraphicalWindow : Window, IDisposable
             if(rightPane.Success && posing.TransformWindowOpen is false && _hideControlPane is false)
             {
                 PosingEditorCommon.DrawSelectionName(posing);
+                
+                using (ImRaii.Disabled(!posing.Selected.IsT0)) {
+                    DrawButtons(posing);
+                    ImGui.Separator();
 
-                DrawButtons(posing);
-                ImGui.Separator();
+                    float height = ImBrio.GetRemainingHeight() - ImBrio.GetLineHeight() - (ImGui.GetStyle().FramePadding.Y * 2);
 
-                float height = ImBrio.GetRemainingHeight() - ImBrio.GetLineHeight() - (ImGui.GetStyle().FramePadding.Y * 2);
-
-                using(var rightPaneSelection = ImRaii.Child("###right_pane_selection", new Vector2(-1, height), true, ImGuiWindowFlags.AlwaysVerticalScrollbar))
-                {
-                    if(rightPaneSelection.Success)
+                    using(var rightPaneSelection = ImRaii.Child("###right_pane_selection", new Vector2(-1, height), true))
                     {
-                        DrawSelection(posing);
+                        if(rightPaneSelection.Success)
+                        {
+                            DrawSelection(posing);
+                        }
                     }
                 }
 
@@ -181,7 +183,7 @@ public class PosingGraphicalWindow : Window, IDisposable
 
         ImGui.SameLine();
 
-        ImBrio.RightAlign(buttonWidth, 8);
+        ImBrio.RightAlign(buttonWidth, 7);
 
         if(ImBrio.FontIconButton((posing.OverlayOpen ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye), new(buttonWidth, 0)))
             posing.OverlayOpen = !posing.OverlayOpen;
@@ -267,8 +269,10 @@ public class PosingGraphicalWindow : Window, IDisposable
 
     private void DrawSelection(PosingCapability posing)
     {
-        DrawGizmo();
-        ImGui.Separator();
+        if(posing.Selected.IsT0) {
+            DrawGizmo();
+            ImGui.Separator();
+        }
         _transformEditor.Draw("graphical_transform", posing);
     }
 
@@ -747,6 +751,7 @@ public class PosingGraphicalWindow : Window, IDisposable
 
     private void DrawBone(DrawBoneEntry entry, IReadOnlyList<DrawBoneEntry> entries, PosingCapability posing)
     {
+        if (entry.Id == PosingSelectionType.ModelTransform) return;
         bool enabled = false;
         bool selected = posing.Selected == entry.Id;
         bool hovered = posing.LastHover == entry.Id;

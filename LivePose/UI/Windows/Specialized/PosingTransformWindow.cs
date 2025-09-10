@@ -52,20 +52,29 @@ public class PosingTransformWindow : Window
         return posing.GameObject.ObjectIndex < 2;
     }
 
-    public unsafe override void Draw()
+    public override void Draw()
     {
         if(!_entityManager.TryGetCapabilityFromSelectedEntity<PosingCapability>(out var posing))
         {
             return;
         }
 
-        WindowName = $"Transform - {posing.Entity.FriendlyName}###livepose_transform_window";
+        WindowName = $"{LivePose.Name} Transform - {posing.Entity.FriendlyName}###livepose_transform_window";
 
         PosingEditorCommon.DrawSelectionName(posing);
 
         DrawButtons(posing);
+        
         ImGui.Separator();
-        DrawGizmo();
+        
+        if(posing.Selected.IsT0) {
+            DrawGizmo();
+        } else {
+            if(ImBrio.FontIconButton((_posingService.CoordinateMode == PosingCoordinateMode.Local ? FontAwesomeIcon.Globe : FontAwesomeIcon.Atom)))
+                _posingService.CoordinateMode = _posingService.CoordinateMode == PosingCoordinateMode.Local ? PosingCoordinateMode.World : PosingCoordinateMode.Local;
+            ImGui.Dummy(new Vector2(ImGui.GetContentRegionAvail().X));
+        }
+
         ImGui.Separator();
 
         _posingTransformEditor.Draw("overlay_transforms_edit", posing);

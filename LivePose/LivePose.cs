@@ -10,7 +10,6 @@ using LivePose.Game.Core;
 using LivePose.Game.GPose;
 using LivePose.Game.Input;
 using LivePose.Game.Posing;
-using LivePose.Game.World;
 using LivePose.IPC;
 using LivePose.Library;
 using LivePose.Library.Sources;
@@ -150,9 +149,6 @@ public class LivePose : IDisposable {
             serviceCollection.AddSingleton<CommandHandlerService>();
         }
         serviceCollection.AddSingleton<ModelTransformService>();
-        serviceCollection.AddSingleton<TimeService>();
-        serviceCollection.AddSingleton<WeatherService>();
-        serviceCollection.AddSingleton<FestivalService>();
         serviceCollection.AddSingleton<SkeletonService>();
         serviceCollection.AddSingleton<PosingService>();
         serviceCollection.AddSingleton<IKService>();

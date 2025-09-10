@@ -12,8 +12,8 @@ public partial class PosingSelectionType : OneOfBase<BonePoseInfoId, ModelTransf
 
     public string DisplayName => Match(
         bone => Localize.Get($"bones.{bone.BoneName}", bone.BoneName),
-        model => "Model Transform",
-        none => "Model Transform"
+        model => "Model Transform (Not Supported)",
+        none => "Model Transform (Not Supported)"
     );
 
     public string Subtitle => Match(
