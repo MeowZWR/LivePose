@@ -15,18 +15,18 @@ using StructsDrawDataContainer = FFXIVClientStructs.FFXIV.Client.Game.Character.
 
 public static class CharacterExtensions
 {
-    public unsafe static StructsCharacter* Native(this ICharacter go)
+    public static unsafe StructsCharacter* Native(this ICharacter go)
     {
         return (StructsCharacter*)go.Address;
     }
 
-    public unsafe static bool HasCompanionSlot(this ICharacter go)
+    public static unsafe bool HasCompanionSlot(this ICharacter go)
     {
         var native = go.Native();
         return native->CompanionObject != null;
     }
 
-    public unsafe static bool HasSpawnedCompanion(this ICharacter go)
+    public static unsafe bool HasSpawnedCompanion(this ICharacter go)
     {
         var native = go.Native();
         return native->CompanionObject != null &&
@@ -37,35 +37,7 @@ public static class CharacterExtensions
             );
     }
 
-    public unsafe static bool CalculateCompanionInfo(this ICharacter go, out CompanionContainer container)
-    {
-        container = GetCompanionInfo(go);
-        return container.Kind != CompanionKind.None;
-    }
-
-    public unsafe static CompanionContainer GetCompanionInfo(this ICharacter go)
-    {
-        var native = go.Native();
-        if(native->CompanionObject != null)
-        {
-            if(native->OrnamentData.OrnamentObject != null)
-            {
-                return new(CompanionKind.Ornament, native->OrnamentData.OrnamentId);
-            }
-            else if(native->Mount.MountObject != null)
-            {
-                return new(CompanionKind.Mount, native->Mount.MountId);
-            }
-            else if(native->CompanionData.CompanionObject != null)
-            {
-                return new(CompanionKind.Companion, (ushort)native->CompanionData.CompanionObject->Character.GameObject.BaseId);
-            }
-        }
-
-        return new(CompanionKind.None, 0);
-    }
-
-    public unsafe static StructsBattleCharacter* Native(this IBattleChara go)
+    public static unsafe StructsBattleCharacter* Native(this IBattleChara go)
     {
         return (StructsBattleCharacter*)go.Address;
     }

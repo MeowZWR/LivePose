@@ -68,7 +68,6 @@ public class PosingCapability : ActorCharacterCapability
     private readonly ConfigurationService _configurationService;
     private readonly PosingTransformWindow _overlayTransformWindow;
     private readonly IFramework _framework;
-    private readonly GameInputService _gameInputService;
     private readonly HistoryService _groupedUndoService;
     private readonly EntityManager _entityManager;
 
@@ -80,8 +79,7 @@ public class PosingCapability : ActorCharacterCapability
         EntityManager entityManager,
         ConfigurationService configurationService,
         PosingTransformWindow overlayTransformWindow,
-        IFramework framework,
-        GameInputService gameInputService)
+        IFramework framework)
         : base(parent)
     {
         _overlayWindow = window;
@@ -91,7 +89,6 @@ public class PosingCapability : ActorCharacterCapability
         _entityManager = entityManager;
         _framework = framework;
         _groupedUndoService = groupedUndoService;
-        _gameInputService = gameInputService;
     }
     
     public void ClearSelection() => Selected = PosingSelectionType.None;

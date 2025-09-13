@@ -117,7 +117,6 @@ public class LivePose : IDisposable {
         serviceCollection.AddSingleton(dalamudServices.TextureProvider);
         serviceCollection.AddSingleton(dalamudServices.Log);
         serviceCollection.AddSingleton(dalamudServices.ChatGui);
-        serviceCollection.AddSingleton(dalamudServices.KeyState);
         serviceCollection.AddSingleton(dalamudServices.Conditions);
         serviceCollection.AddSingleton(dalamudServices.GameConfig);
         serviceCollection.AddSingleton(dalamudServices.GameGui);
@@ -141,19 +140,17 @@ public class LivePose : IDisposable {
         serviceCollection.AddSingleton<EntityActorManager>();
 
         // Game
-        serviceCollection.AddSingleton<TargetService>();
         serviceCollection.AddSingleton<ActorRedrawService>();
         serviceCollection.AddSingleton<ActionTimelineService>();
         serviceCollection.AddSingleton<GPoseService>();
         if(IsPlugin) {
             serviceCollection.AddSingleton<CommandHandlerService>();
         }
-        serviceCollection.AddSingleton<ModelTransformService>();
+
         serviceCollection.AddSingleton<SkeletonService>();
         serviceCollection.AddSingleton<PosingService>();
         serviceCollection.AddSingleton<IKService>();
         serviceCollection.AddSingleton<ObjectMonitorService>();
-        serviceCollection.AddSingleton<GameInputService>();
 
         // Library
         serviceCollection.AddSingleton<FileTypeInfoBase, CMToolPoseFileInfo>();
