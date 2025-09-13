@@ -9,7 +9,6 @@ using LivePose.Game.Input;
 using LivePose.Game.Posing;
 using LivePose.Game.Posing.Skeletons;
 using LivePose.Resources;
-using LivePose.UI.Widgets.Posing;
 using LivePose.UI.Windows.Specialized;
 using OneOf;
 using OneOf.Types;
@@ -85,8 +84,6 @@ public class PosingCapability : ActorCharacterCapability
         GameInputService gameInputService)
         : base(parent)
     {
-        Widget = new PosingWidget(this);
-
         _overlayWindow = window;
         _posingService = posingService;
         _configurationService = configurationService;

@@ -4,8 +4,7 @@ using System.Linq;
 
 namespace LivePose.Game.Posing;
 
-public class BoneFilter
-{
+public class BoneFilter {
     private readonly PosingService _posingService;
 
     private readonly HashSet<string> _allowedCategories = [];
@@ -14,24 +13,21 @@ public class BoneFilter
 
     public IReadOnlyList<BoneCategories.BoneCategory> AllCategories => _posingService.BoneCategories.Categories;
 
-    public BoneFilter(PosingService posingService)
-    {
+    public BoneFilter(PosingService posingService) {
         _posingService = posingService;
 
         foreach(var category in _posingService.BoneCategories.Categories)
             _allowedCategories.Add(category.Id);
     }
 
-    public unsafe bool IsBoneValid(Bone bone, PoseInfoSlot slot, bool considerHidden = false)
-    {
+    public unsafe bool IsBoneValid(Bone bone, PoseInfoSlot slot, bool considerHidden = false) {
         bool foundBone = false;
 
         if(bone.IsHidden && !considerHidden)
             return false;
 
         // Look for excludes
-        foreach(var excluded in _excludedPrefixes)
-        {
+        foreach(var excluded in _excludedPrefixes) {
             if(bone.Name.StartsWith(excluded))
                 return false;
         }
@@ -44,15 +40,12 @@ public class BoneFilter
                 return false;
 
         // Check if the bone is in any of the categories and that category is visible
-        foreach(var category in AllCategories)
-        {
+        foreach(var category in AllCategories) {
             if(category.Type != BoneCategories.BoneCategoryTypes.Filter)
                 continue;
 
-            foreach(var boneName in category.Bones)
-            {
-                if(bone.Name.StartsWith(boneName))
-                {
+            foreach(var boneName in category.Bones) {
+                if(bone.Name.StartsWith(boneName)) {
                     foundBone = true;
 
                     if(_allowedCategories.Any(x => category.Id == x))
@@ -75,53 +68,43 @@ public class BoneFilter
     public bool IsCategoryEnabled(string id) => _allowedCategories.Any((x) => x == id);
     public bool IsCategoryEnabled(BoneCategories.BoneCategory category) => _allowedCategories.Any(x => category.Id == x);
 
-    public void DisableCategory(string id)
-    {
+    public void DisableCategory(string id) {
         _allowedCategories.Remove(id);
     }
 
-    public void DisableCategory(BoneCategories.BoneCategory category)
-    {
+    public void DisableCategory(BoneCategories.BoneCategory category) {
         _allowedCategories.Remove(category.Id);
     }
 
-    public void EnableCategory(string id)
-    {
+    public void EnableCategory(string id) {
         _allowedCategories.Add(id);
     }
 
-    public void EnableCategory(BoneCategories.BoneCategory category)
-    {
+    public void EnableCategory(BoneCategories.BoneCategory category) {
         _allowedCategories.Add(category.Id);
     }
 
-    public void AddExcludedPrefix(string bonePrefix)
-    {
+    public void AddExcludedPrefix(string bonePrefix) {
         _excludedPrefixes.Add(bonePrefix);
     }
 
-    public void EnableAll()
-    {
+    public void EnableAll() {
         _allowedCategories.Clear();
         foreach(var category in AllCategories)
             _allowedCategories.Add(category.Id);
     }
 
-    public void DisableAll()
-    {
+    public void DisableAll() {
         _allowedCategories.Clear();
     }
 
-    public void EnableOnly(string id)
-    {
+    public void EnableOnly(string id) {
         _allowedCategories.Clear();
         _allowedCategories.Add(id);
     }
 
-    public void EnableOnly(BoneCategories.BoneCategory category)
-    {
+    public void EnableOnly(BoneCategories.BoneCategory category) {
         _allowedCategories.Clear();
         _allowedCategories.Add(category.Id);
     }
-
 }

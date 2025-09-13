@@ -104,11 +104,15 @@ public class BoneSearchControl
 
         if(!bone.IsHidden)
         {
-            using(var node = ImRaii.TreeNode($"{bone.FriendlyName}###{bonePoseInfoId}", flags))
-            {
+            using(var node = ImRaii.TreeNode($"{bone.FriendlyName}###{bonePoseInfoId}", flags | ImGuiTreeNodeFlags.SpanFullWidth)) {
+                var clicked = node.Success && ImGui.IsItemClicked();
+                ImGui.SameLine();
+                ImGui.TextDisabled(bone.Name);
+                
+                
                 if(node.Success)
                 {
-                    if(ImGui.IsItemClicked())
+                    if(clicked || ImGui.IsItemClicked())
                     {
                         posing.Selected = bonePoseInfoId;
                     }
@@ -135,7 +139,7 @@ public class BoneSearchControl
             return true;
 
         if(includeCurrent)
-            if(bone.FriendlyDescriptor.Contains(term, StringComparison.OrdinalIgnoreCase))
+            if(bone.FriendlyDescriptor.Contains(term, StringComparison.OrdinalIgnoreCase) || bone.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
                 return true;
 
         foreach(var child in bone.Children)
