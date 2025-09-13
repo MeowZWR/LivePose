@@ -406,7 +406,7 @@ public class PosingOverlayToolbarWindow : Window
             using(ImRaii.Disabled(!posing.HasOverride))
             {
                 if(ImGui.Button($"{FontAwesomeIcon.Undo.ToIconString()}###reset_pose", new Vector2(buttonSize)))
-                    posing.Reset(false, false);
+                    posing.Reset(true, false);
             }
         }
         if(ImGui.IsItemHovered())

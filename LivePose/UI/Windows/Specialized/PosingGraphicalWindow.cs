@@ -254,7 +254,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         using(ImRaii.Disabled(!posing.HasOverride))
         {
             if(ImBrio.FontIconButton(FontAwesomeIcon.Undo, new(buttonWidth, 0)))
-                posing.Reset(false, false);
+                posing.Reset(true, false);
         }
 
         if(ImGui.IsItemHovered())
