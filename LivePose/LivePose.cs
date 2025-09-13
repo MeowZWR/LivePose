@@ -120,6 +120,7 @@ public class LivePose : IDisposable {
         serviceCollection.AddSingleton(dalamudServices.KeyState);
         serviceCollection.AddSingleton(dalamudServices.Conditions);
         serviceCollection.AddSingleton(dalamudServices.GameConfig);
+        serviceCollection.AddSingleton(dalamudServices.GameGui);
         
         serviceCollection.AddSingleton<FakePoseService>();
         
@@ -133,6 +134,7 @@ public class LivePose : IDisposable {
         // IPC
         serviceCollection.AddSingleton<IpcService>();
         serviceCollection.AddSingleton<HeelsService>();
+        serviceCollection.AddSingleton<BrioService>();
 
         // Entity
         serviceCollection.AddSingleton<EntityManager>();
