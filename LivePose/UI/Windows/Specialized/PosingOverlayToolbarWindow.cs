@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
@@ -8,7 +9,6 @@ using LivePose.Capabilities.Posing;
 using LivePose.Config;
 using LivePose.Core;
 using LivePose.Entities;
-using LivePose.Game.Input;
 using LivePose.Game.Posing;
 using LivePose.UI.Controls.Core;
 using LivePose.UI.Controls.Editors;
@@ -18,6 +18,7 @@ using OneOf.Types;
 using System.Numerics;
 using Dalamud.Game.ClientState.Objects.Enums;
 using LivePose.Capabilities.Actor;
+using LivePose.Files;
 using LivePose.IPC;
 
 namespace LivePose.UI.Windows.Specialized;
@@ -26,11 +27,9 @@ public class PosingOverlayToolbarWindow : Window
 {
     private readonly PosingOverlayWindow _overlayWindow;
     private readonly EntityManager _entityManager;
-    private readonly HistoryService _groupedUndoService;
     private readonly PosingTransformWindow _overlayTransformWindow;
     private readonly PosingService _posingService;
     private readonly ConfigurationService _configurationService;
-    private readonly GameInputService _gameInputService;
     private readonly IClientState _clientState;
     private readonly PosingGraphicalWindow _graphicalWindow;
     
@@ -41,7 +40,7 @@ public class PosingOverlayToolbarWindow : Window
 
     private const string _boneFilterPopupName = "livepose_bone_filter_popup";
 
-    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, HistoryService groupedUndoService, GameInputService gameInputService, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
+    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
     {
         Namespace = "livepose_posing_overlay_toolbar_namespace";
 
@@ -50,8 +49,6 @@ public class PosingOverlayToolbarWindow : Window
         _overlayTransformWindow = overlayTransformWindow;
         _posingService = posingService;
         _configurationService = configurationService;
-        _groupedUndoService = groupedUndoService;
-        _gameInputService = gameInputService;
         _clientState = clientState;
         _graphicalWindow = graphicalWindow;
 
@@ -325,7 +322,7 @@ public class PosingOverlayToolbarWindow : Window
         {
             using(ImRaii.PushColor(ImGuiCol.Button, ThemeManager.CurrentTheme.Accent.AccentColor, enabled))
             {
-                if(ImGui.Button($"IK###bone_ik", new Vector2(buttonSize)))
+                if(ImGui.Button($"IK###bone_ik", new Vector2(buttonOperationSize)))
                     ImGui.OpenPopup("overlay_bone_ik");
             }
         }
@@ -333,11 +330,42 @@ public class PosingOverlayToolbarWindow : Window
             ImGui.SetTooltip("Inverse Kinematics");
 
         ImGui.SameLine();
+        
+        
+        using(ImRaii.Disabled(!posing.SkeletonPosing.PoseInfo.HasIKStacks)) {
+            if(ImGui.Button($"IK###clear_ik", new Vector2(buttonOperationSize))) {
+                var pose = new PoseFile();
+                posing.SkeletonPosing.ExportSkeletonPose(pose);
+                foreach(var p in pose.Bones.Keys) {
+                    var bBone = posing.SkeletonPosing.GetBone(p, PoseInfoSlot.Character);
+                    if (bBone == null) continue;
+                    var bonePoseInfo = posing.SkeletonPosing.GetBonePose(bBone);
+                    
+                    bonePoseInfo.ClearStacks();
+                    bonePoseInfo.DefaultIK = BoneIKInfo.CalculateDefault(p);
+                }
+                
+                posing.SkeletonPosing.ResetPose();
+                posing.SkeletonPosing.ImportSkeletonPose(pose, new PoseImporterOptions(new BoneFilter(_posingService), TransformComponents.All, false));
+            }
+            
+            var center = ImGui.GetItemRectMin() + ImGui.GetItemRectSize() / 2;
+            var radius = MathF.Ceiling(ImGui.GetTextLineHeight() * 0.8f);
+            var thickness = MathF.Ceiling(ImGui.GetTextLineHeight() * 0.1f);
+            ImGui.GetWindowDrawList().AddCircle(center, radius, ImGui.GetColorU32(ImGuiCol.Text) & 0x80FFFFFF, 16, thickness);
+            var offset = (radius - thickness) / MathF.Sqrt(2.0f);
+            var lineStart = center + new Vector2(-offset, -offset);
+            var lineEnd   = center + new Vector2(offset, offset);
+            ImGui.GetWindowDrawList().AddLine(lineStart, lineEnd, 0x400000FF, thickness);
+        }
+        
+        if(ImGui.IsItemHovered())
+            ImGui.SetTooltip("Reset Inverse Kinematics");
 
-
+        ImGui.SameLine();
         using(ImRaii.PushFont(UiBuilder.IconFont))
         {
-            if(ImGui.Button($"{FontAwesomeIcon.Search.ToIconString()}###bone_search", new Vector2(buttonSize)))
+            if(ImGui.Button($"{FontAwesomeIcon.Search.ToIconString()}###bone_search", new Vector2(buttonOperationSize)))
                 ImGui.OpenPopup("overlay_bone_search_popup");
         }
         if(ImGui.IsItemHovered())
@@ -350,7 +378,7 @@ public class PosingOverlayToolbarWindow : Window
 
             using(ImRaii.PushColor(ImGuiCol.Text, timelineCapability.SpeedMultiplierOverride == 0 ? UIConstants.ToggleButtonActive : UIConstants.ToggleButtonInactive)) 
             using(ImRaii.PushFont(UiBuilder.IconFont)) {
-                if(ImGui.Button($"{FontAwesomeIcon.Snowflake.ToIconString()}###freeze_toggle", new Vector2(buttonSize))) {
+                if(ImGui.Button($"{FontAwesomeIcon.Snowflake.ToIconString()}###freeze_toggle", new Vector2(buttonOperationSize))) {
                     if(timelineCapability.SpeedMultiplierOverride == 0) {
                         timelineCapability.ResetOverallSpeedOverride();
                     } else {
