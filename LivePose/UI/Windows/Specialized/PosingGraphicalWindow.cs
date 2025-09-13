@@ -21,6 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using LivePose.IPC;
 
@@ -36,6 +38,7 @@ public class PosingGraphicalWindow : Window, IDisposable
     private readonly ConfigurationService _configurationService;
     private readonly PosingService _posingService;
     private readonly GPoseService _gPoseService;
+    private readonly IClientState _clientState;
     private readonly PosingTransformEditor _transformEditor = new();
     private readonly BoneSearchControl _boneSearchControl = new();
     private float _closestHover = float.MaxValue;
@@ -46,7 +49,7 @@ public class PosingGraphicalWindow : Window, IDisposable
     int _selectedPane = 0;
     private bool _hideControlPane = false;
 
-    public PosingGraphicalWindow(EntityManager entityManager, HistoryService groupedUndoService, ConfigurationService configurationService, PosingService posingService, GPoseService gPoseService) : base($"{LivePose.Name} - POSING###livepose_posing_graphical_window")
+    public PosingGraphicalWindow(EntityManager entityManager, HistoryService groupedUndoService, ConfigurationService configurationService, PosingService posingService, GPoseService gPoseService, IClientState clientState) : base($"{LivePose.Name} - POSING###livepose_posing_graphical_window")
     {
         Namespace = "livepose_posing_graphical_namespace";
 
@@ -55,6 +58,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         _configurationService = configurationService;
         _posingService = posingService;
         _gPoseService = gPoseService;
+        _clientState = clientState;
 
         _posePositions = ResourceProvider.Instance.GetResourceDocument<GraphicalPosePositionFile>("Data.GraphicalBonePosePositions.json");
         _posePositions.Process();
@@ -76,6 +80,9 @@ public class PosingGraphicalWindow : Window, IDisposable
 
         if(posing.GameObject.ObjectIndex >= 2) return false;
 
+        if(_clientState.LocalPlayer == null) return false;
+        if(_clientState.LocalPlayer.StatusFlags.HasFlag(StatusFlags.InCombat)) return false;
+        
         return base.DrawConditions();
     }
 

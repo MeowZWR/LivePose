@@ -16,6 +16,7 @@ using LivePose.UI.Controls.Stateless;
 using LivePose.UI.Theming;
 using OneOf.Types;
 using System.Numerics;
+using Dalamud.Game.ClientState.Objects.Enums;
 using LivePose.Capabilities.Actor;
 using LivePose.IPC;
 
@@ -96,6 +97,10 @@ public class PosingOverlayToolbarWindow : Window
         }
 
         if(posing.GameObject.ObjectIndex >= 2) return false;
+        
+        if(_clientState.LocalPlayer == null) return false;
+        if(_clientState.LocalPlayer.StatusFlags.HasFlag(StatusFlags.InCombat)) return false;
+        
 
         return base.DrawConditions();
     }

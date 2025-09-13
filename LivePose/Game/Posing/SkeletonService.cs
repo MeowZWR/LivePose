@@ -16,6 +16,7 @@ using LivePose.Game.Posing.Skeletons;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Dalamud.Game.ClientState.Objects.Enums;
 using static FFXIVClientStructs.Havok.Animation.Rig.hkaPose;
 using GameSkeleton = FFXIVClientStructs.FFXIV.Client.Graphics.Render.Skeleton;
 
@@ -88,6 +89,8 @@ public unsafe class SkeletonService : IDisposable
 
     private void ApplyBrioTransforms(Skeleton skeleton, SkeletonPosingCapability posingCapability)
     {
+        if(posingCapability.Character.StatusFlags.HasFlag(StatusFlags.InCombat)) return;
+
         for(int partialIdx = 0; partialIdx < skeleton.Partials.Count; ++partialIdx)
         {
             var partial = skeleton.Partials[partialIdx];

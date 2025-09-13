@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Dalamud.Game.ClientState.Objects.Enums;
 using LivePose.Game.Camera;
 using LivePose.IPC;
 using CameraManager = FFXIVClientStructs.FFXIV.Client.Game.Control.CameraManager;
@@ -59,6 +60,8 @@ public class PosingOverlayWindow : Window, IDisposable
 
     public override bool DrawConditions() {
         if(_clientState.IsGPosing) return false;
+        if(_clientState.LocalPlayer == null) return false;
+        if(_clientState.LocalPlayer.StatusFlags.HasFlag(StatusFlags.InCombat)) return false;
         
         if(!_entityManager.TryGetCapabilityFromSelectedEntity<PosingCapability>(out var posing)) {
             return false;
