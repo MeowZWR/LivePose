@@ -87,25 +87,31 @@ public class IpcService : IDisposable
 
     private (int, int) ApiVersion_Impl() => CurrentApiVersion;
 
-    public string GetPose(ushort objectIndex) {
-        if(objectIndex > 200) return string.Empty;
-        var obj = _objectTable[objectIndex];
-        if(obj == null || !_entityManager.TryGetEntity(new EntityId(obj), out var entity) || entity is not ActorEntity actorEntity) return string.Empty;
-        if (!actorEntity.TryGetCapability<ActionTimelineCapability>(out var timelineCapability)) return string.Empty;
-        if (!actorEntity.TryGetCapability<SkeletonPosingCapability>(out var skeletonPosingCapability)) return string.Empty;
 
+    private PoseInfo DeserializePose(SkeletonPosingCapability skeletonPosingCapability, Dictionary<BonePoseInfoId, List<BonePoseData>> dict) {
 
-        var data = new LivePoseData();
+        var pose = new PoseInfo();
         
-        foreach(var b in skeletonPosingCapability.PoseInfo.StackCounts.Keys) {
+        foreach(var (b, list) in dict) {
+            var bone = pose.GetPoseInfo(b);
+            foreach(var s in list) {
+                bone.Apply(s.Transform, null, s.Propogate, TransformComponents.All, s.BoneIkInfo);
+            }
+        }
+
+
+        return pose;
+    }
+    
+    private Dictionary<BonePoseInfoId, List<BonePoseData>> SerializePose(SkeletonPosingCapability skeletonPosingCapability, PoseInfo pose) {
+        var dict =  new Dictionary<BonePoseInfoId, List<BonePoseData>>();
+        foreach(var b in pose.StackCounts.Keys) {
             var bone = skeletonPosingCapability.GetBone(b, PoseInfoSlot.Character);
             if (bone == null) continue;
 
-            var bonePose = skeletonPosingCapability.GetBonePose(bone);
+            var bonePose = pose.GetPoseInfo(bone);
             if (!bonePose.HasStacks) continue;
             
-            
-
             var list = new List<BonePoseData>();
             foreach(var p in bonePose.Stacks) {
                 
@@ -140,7 +146,30 @@ public class IpcService : IDisposable
                 list.Add(bonePoseData);
             }
 
-            data.Pose.Add(b, list);
+            dict.Add(bonePose.Id, list);
+        }
+
+        return dict;
+    }
+    
+    public string GetPose(ushort objectIndex) {
+        if(objectIndex > 200) return string.Empty;
+        var obj = _objectTable[objectIndex];
+        if(obj == null || !_entityManager.TryGetEntity(new EntityId(obj), out var entity) || entity is not ActorEntity actorEntity) return string.Empty;
+        if (!actorEntity.TryGetCapability<ActionTimelineCapability>(out var timelineCapability)) return string.Empty;
+        if (!actorEntity.TryGetCapability<SkeletonPosingCapability>(out var skeletonPosingCapability)) return string.Empty;
+        
+        var data = new LivePoseData();
+        foreach(var (key, p) in skeletonPosingCapability.BodyPoses) {
+            var pose = SerializePose(skeletonPosingCapability, p);
+            if(pose.Count > 0)
+                data.BodyPoses[key] = pose;
+        }
+        
+        foreach(var (key, p) in skeletonPosingCapability.FacePoses) {
+            var pose = SerializePose(skeletonPosingCapability, p);
+            if(pose.Count > 0)
+                data.FacePoses[key] = pose;
         }
         
         data.Frozen = timelineCapability.SpeedMultiplierOverride == 0;
@@ -186,15 +215,16 @@ public class IpcService : IDisposable
                 return;
             }
             LivePose.Log.Verbose($"Applying Pose to GameObject#{obj.ObjectIndex} => {data}");
-            foreach(var (b, list) in livePoseData.Pose) {
-                var bone = skeletonPosingCapability.GetBone(b, PoseInfoSlot.Character);
-                if(bone == null) continue;
-                var bonePose = skeletonPosingCapability.GetBonePose(bone);
-                foreach(var s in list) {
-                    bonePose.Apply(s.Transform, null, s.Propogate, TransformComponents.All, s.BoneIkInfo);
-                }
+            
+            foreach(var (key, bodyDict) in livePoseData.BodyPoses) {
+                skeletonPosingCapability.BodyPoses[key] = DeserializePose(skeletonPosingCapability, bodyDict);
+            }
+            
+            foreach(var (key, faceDict) in livePoseData.FacePoses) {
+                skeletonPosingCapability.FacePoses[key] = DeserializePose(skeletonPosingCapability, faceDict);
             }
 
+            skeletonPosingCapability.ApplyTimelinePose();
             if(livePoseData.Frozen) {
                 timelineCapability.SetOverallSpeedOverride(0f);
             } else {

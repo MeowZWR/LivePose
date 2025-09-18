@@ -5,7 +5,6 @@ using LivePose.Core;
 using LivePose.Entities;
 using LivePose.Entities.Actor;
 using LivePose.Files;
-using LivePose.Game.Input;
 using LivePose.Game.Posing;
 using LivePose.Game.Posing.Skeletons;
 using LivePose.Resources;

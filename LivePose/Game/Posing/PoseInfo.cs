@@ -1,4 +1,5 @@
-﻿using LivePose.Core;
+﻿using System;
+using LivePose.Core;
 using LivePose.Game.Posing.Skeletons;
 using OneOf;
 using System.Collections.Generic;
@@ -39,22 +40,32 @@ public class PoseInfo
 
     public unsafe BonePoseInfo GetPoseInfo(Bone bone, PoseInfoSlot slot = PoseInfoSlot.Character) => GetPoseInfo(new BonePoseInfoId(bone.Name, bone.PartialId, slot));
 
-    public void Clear()
+    public void Clear(Predicate<BonePoseInfoId>? predicate = null)
     {
         foreach(var pose in _poses)
         {
-            pose.Value.ClearStacks();
+            if (predicate == null || predicate(pose.Key))
+                pose.Value.ClearStacks();
         }
     }
 
-    public PoseInfo Clone()
+    public PoseInfo Clone(Predicate<BonePoseInfoId>? predicate = null)
     {
         var clone = new PoseInfo();
         foreach(var pose in _poses)
         {
-            clone._poses.Add(pose.Key, pose.Value.Clone(clone));
+            if (predicate == null || predicate(pose.Key))
+                clone._poses.Add(pose.Key, pose.Value.Clone(clone));
         }
         return clone;
+    }
+
+    public void Overlay(PoseInfo overlayPose, Predicate<BonePoseInfoId>? predicate = null) {
+        foreach(var pose in overlayPose._poses) {
+            if(predicate == null || predicate(pose.Key)) {
+                _poses[pose.Key] = pose.Value.Clone(this);
+            }
+        }
     }
 }
 
@@ -142,7 +153,24 @@ public class BonePoseInfo(BonePoseInfoId id, PoseInfo parent)
         var clone = new BonePoseInfo(Id, parent)
         {
             DefaultPropagation = DefaultPropagation,
-            MirrorMode = MirrorMode
+            MirrorMode = MirrorMode,
+            DefaultIK = new BoneIKInfo() {
+                Enabled = DefaultIK.Enabled,
+                EnforceConstraints = DefaultIK.EnforceConstraints,
+                SolverOptions = DefaultIK.SolverOptions.Index switch {
+                    0 => OneOf<BoneIKInfo.CCDOptions, BoneIKInfo.TwoJointOptions>.FromT0(new BoneIKInfo.CCDOptions() {
+                        Depth = DefaultIK.SolverOptions.AsT0.Depth,
+                        Iterations = DefaultIK.SolverOptions.AsT0.Iterations
+                    }),
+                    1 => OneOf<BoneIKInfo.CCDOptions, BoneIKInfo.TwoJointOptions>.FromT1(new BoneIKInfo.TwoJointOptions() {
+                        FirstBone = DefaultIK.SolverOptions.AsT1.FirstBone,
+                        SecondBone = DefaultIK.SolverOptions.AsT1.SecondBone,
+                        EndBone = DefaultIK.SolverOptions.AsT1.EndBone,
+                        RotationAxis = DefaultIK.SolverOptions.AsT1.RotationAxis
+                    }),
+                    _ => throw new IndexOutOfRangeException()
+                }
+            }
         };
 
         clone._stacks.AddRange([.. _stacks]);

@@ -6,8 +6,11 @@ using LivePose.Game.Actor.Appearance;
 using LivePose.Game.Posing;
 using LivePose.Game.Posing.Skeletons;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using LivePose.IPC;
 
 namespace LivePose.Capabilities.Posing
@@ -17,6 +20,8 @@ namespace LivePose.Capabilities.Posing
     {
         private readonly SkeletonService _skeletonService;
         private readonly PosingService _posingService;
+        private readonly IFramework _framework;
+        private readonly HeelsService _heelsService;
 
 
         public Skeleton? CharacterSkeleton { get; private set; }
@@ -30,13 +35,18 @@ namespace LivePose.Capabilities.Posing
 
         public PoseInfo PoseInfo { get; set; } = new PoseInfo();
 
+        public Dictionary<(ushort, ushort), PoseInfo> BodyPoses { get; } = [];
+        public Dictionary<ushort, PoseInfo> FacePoses { get; } = [];
+
         private readonly List<Action<Bone, BonePoseInfo>> _transitiveActions = [];
 
 
-        public SkeletonPosingCapability(ActorEntity parent, SkeletonService skeletonService, PosingService posingService) : base(parent)
+        public SkeletonPosingCapability(ActorEntity parent, SkeletonService skeletonService, PosingService posingService, HeelsService heelsService, IFramework framework) : base(parent)
         {
             _skeletonService = skeletonService;
             _posingService = posingService;
+            _framework = framework;
+            _heelsService = heelsService;
 
             _skeletonService.SkeletonUpdateStart += OnSkeletonUpdateStart;
             _skeletonService.SkeletonUpdateEnd += OnSkeletonUpdateEnd;
@@ -158,8 +168,63 @@ namespace LivePose.Capabilities.Posing
             };
         }
 
-        private unsafe void UpdateCache()
-        {
+        private (ushort, ushort) activeBodyPose;
+        private ushort activeFacePose;
+        
+        public unsafe void ApplyTimelinePose() {
+            var chr = (Character*)Character.Address;
+            var currentBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(0);
+            var currentUpperBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(1);
+            var currentFacePose =  chr->Timeline.TimelineSequencer.GetSlotTimeline(2);
+            ApplyTimelinePose(currentBodyPose, currentUpperBodyPose, currentFacePose);
+        }
+
+        private void ApplyTimelinePose(ushort main, ushort upperBody, ushort face) {
+            activeBodyPose = (main, upperBody);
+            activeFacePose = face;
+
+            if(BodyPoses.TryGetValue(activeBodyPose, out var bodyPose)) {
+                PoseInfo = bodyPose;
+            } else {
+                PoseInfo = BodyPoses[activeBodyPose] = new PoseInfo();
+            }
+
+            PoseInfo.Clear(FilterFaceBones);
+                
+            if(!FacePoses.TryGetValue(activeFacePose, out var facePose)) {
+                facePose = FacePoses[activeFacePose] = new PoseInfo();
+            }
+
+            PoseInfo.Overlay(facePose, FilterFaceBones);
+        }
+        
+        private unsafe void UpdateCache() {
+            var chr = (Character*)Character.Address;
+            var currentBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(0);
+            var currentUpperBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(1);
+            var currentFacePose =  chr->Timeline.TimelineSequencer.GetSlotTimeline(2);
+
+            if(activeBodyPose != (currentBodyPose, currentUpperBodyPose) || currentFacePose != activeFacePose) {
+                if (chr->ObjectIndex == 0) {
+                    if (activeFacePose != 0)
+                        FacePoses[activeFacePose] = PoseInfo.Clone(FilterFaceBones);
+                    if (activeBodyPose != (0, 0))
+                        BodyPoses[activeBodyPose] = PoseInfo.Clone();
+
+
+                    _framework.RunOnTick(() => {
+                        if(_heelsService.IsAvailable) {
+                            _heelsService.SetPlayerPoseTag();
+                            
+                        }
+                    }, delayTicks: 1);
+
+
+                }
+
+                ApplyTimelinePose(currentBodyPose, currentUpperBodyPose, currentFacePose);
+            }
+            
             CharacterSkeleton = _skeletonService.GetSkeleton(Character.GetCharacterBase());
             MainHandSkeleton = _skeletonService.GetSkeleton(Character.GetWeaponCharacterBase(ActorEquipSlot.MainHand));
             OffHandSkeleton = _skeletonService.GetSkeleton(Character.GetWeaponCharacterBase(ActorEquipSlot.OffHand));
@@ -170,6 +235,20 @@ namespace LivePose.Capabilities.Posing
 
             CharacterHasTail = CharacterSkeleton?.GetFirstVisibleBone("n_sippo_a") != null;
             CharacterIsIVCS = CharacterSkeleton?.GetFirstVisibleBone("iv_ko_c_l") != null;
+        }
+
+        private bool FilterFaceBones(BonePoseInfoId obj) {
+            var skeleton = obj.Slot switch {
+                PoseInfoSlot.Character => CharacterSkeleton,
+                PoseInfoSlot.MainHand => MainHandSkeleton,
+                PoseInfoSlot.OffHand => OffHandSkeleton,
+                _ => null
+            };
+
+            var bone = skeleton?.GetFirstVisibleBone(obj.BoneName);
+            if(bone == null) return false;
+
+            return bone.IsFaceBone;
         }
 
         private void OnSkeletonUpdateStart()

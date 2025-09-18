@@ -2,6 +2,7 @@
 using LivePose.Resources;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using static FFXIVClientStructs.FFXIV.Client.Graphics.Scene.CharacterBase;
 
 namespace LivePose.Game.Posing.Skeletons;
@@ -64,6 +65,16 @@ public class Bone(int index, Skeleton skeleton, PartialSkeleton partial)
     }
 
     public unsafe bool EligibleForIK => Parent != null && !Parent.IsHidden;
+
+
+    private bool? isFaceBone;
+    public bool IsFaceBone {
+        get {
+            if(isFaceBone.HasValue) return isFaceBone.Value;
+            isFaceBone = Name == "j_f_face" || GetBonesToDepth(int.MaxValue, false).Any(b => b.Name == "j_f_face");
+            return isFaceBone.Value;
+        }
+    }
 
     public Bone? GetFirstVisibleParent()
     {

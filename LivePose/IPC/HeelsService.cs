@@ -1,4 +1,7 @@
 ﻿using System;
+using System.IO;
+using System.IO.Compression;
+using System.Text;
 using System.Threading;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc;
@@ -9,6 +12,10 @@ namespace LivePose.IPC;
 
 public class HeelsService : BrioIPC {
     public override string Name => "Simple Heels";
+
+    public const string TagName = "LivePose_v2";
+    
+    
 
     public override bool IsAvailable => CheckStatus()  == IPCStatus.Available;
 
@@ -63,9 +70,9 @@ public class HeelsService : BrioIPC {
         
         _framework.RunOnTick(() => {
             for(ushort i = 2; i < 200; i++) {
-                var tag = _getTag.InvokeFunc(i, "LivePose");
+                var tag = _getTag.InvokeFunc(i, TagName);
                 if(tag != null) {
-                    OnTagChanged(i, "LivePose", tag);
+                    OnTagChanged(i, TagName, tag);
                 }
             }
         }, delayTicks: 60);
@@ -84,65 +91,55 @@ public class HeelsService : BrioIPC {
             if(token.IsCancellationRequested) return;
             
             LivePose.Log.Debug("Updating LivePose Tag for local player.");
-            
-            /*
-           var obj = _clientState.LocalPlayer;
-
-           if(obj == null || !_entityManager.TryGetEntity(new EntityId(obj), out var entity) || entity is not ActorEntity actorEntity) {
-               _removeTag?.InvokeAction(0, "LivePose");
-               return;
-           }
-
-
-
-           if (!actorEntity.TryGetCapability<SkeletonPosingCapability>(out var skeletonPosingCapability)) {
-               _removeTag?.InvokeAction(0, "LivePose");
-               return;
-           }
-
-           var data = new LivePoseData() { Pose = new Dictionary<string, List<Transform>>() };
-
-
-           foreach(var b in skeletonPosingCapability.PoseInfo.StackCounts.Keys) {
-               var bone = skeletonPosingCapability.GetBone(b, PoseInfoSlot.Character);
-               if (bone == null) continue;
-
-               var bonePose = skeletonPosingCapability.GetBonePose(bone);
-               if (!bonePose.HasStacks) continue;
-
-               var list = new List<Transform>();
-               foreach(var p in bonePose.Stacks) {
-                   list.Add(p.Transform);
-               }
-
-               data.Pose.Add(b, list);
-           }
-
-           if(data.IsDefault) {
-               _removeTag?.InvokeAction(0, "LivePose");
-               return;
-           }
-
-           */
 
             var data = _ipcService.GetPose(0);
 
             if(string.IsNullOrWhiteSpace(data)) {
-                _removeTag?.InvokeAction(0, "LivePose");
+                _removeTag?.InvokeAction(0, TagName);
                 return;
             }
             
-            _setTag?.InvokeAction(0, "LivePose", data);
+            _setTag?.InvokeAction(0, TagName, Compress(data));
             
         }, delay: TimeSpan.FromMilliseconds(500), cancellationToken: token);
     }
+
+    private string Compress(string str) {
+        byte[] compressedBytes;
+        using (var uncompressedStream = new MemoryStream(Encoding.UTF8.GetBytes(str)))
+        {
+            using (var compressedStream = new MemoryStream())
+            {
+                using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
+                {
+                    uncompressedStream.CopyTo(gzipStream);
+                }
+                compressedBytes = compressedStream.ToArray();
+            }
+        }
+        return Convert.ToBase64String(compressedBytes);
+    }
     
+    public static string Decompress(string? compressedString) {
+        if(string.IsNullOrEmpty(compressedString)) return string.Empty;
+        byte[] decompressedBytes;
+        var compressedStream = new MemoryStream(Convert.FromBase64String(compressedString));
+        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress))
+        {
+            using (var decompressedStream = new MemoryStream())
+            {
+                gzipStream.CopyTo(decompressedStream);
+                decompressedBytes = decompressedStream.ToArray();
+            }
+        }
+        return Encoding.UTF8.GetString(decompressedBytes);
+    }
 
     private void OnTagChanged(int objectIndex, string tag, string? value) {
         if(objectIndex < 2 || objectIndex >= 200) return;
-        if(tag != "LivePose") return;
+        if(tag != TagName) return;
         LivePose.Log.Debug($"LivePose tag Changed for Object#{objectIndex}");
-        _ipcService.SetPose((ushort)objectIndex, value ?? string.Empty);
+        _ipcService.SetPose((ushort)objectIndex, Decompress(value));
     }
 
     public override void Dispose() {

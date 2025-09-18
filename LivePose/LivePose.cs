@@ -8,7 +8,6 @@ using LivePose.Game.Actor;
 using LivePose.Game.Chat;
 using LivePose.Game.Core;
 using LivePose.Game.GPose;
-using LivePose.Game.Input;
 using LivePose.Game.Posing;
 using LivePose.IPC;
 using LivePose.Library;

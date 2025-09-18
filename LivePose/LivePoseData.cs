@@ -57,10 +57,17 @@ public class BonePoseData {
     }
 }
 
+
+
+
 public class LivePoseData {
-    public Dictionary<string, List<BonePoseData>> Pose = [];
+    // public Dictionary<string, List<BonePoseData>> Pose = [];
+
+    public bool ShouldSerializeBodyPoses() => BodyPoses.Count > 0;
+    public bool ShouldSerializeFacePoses() => FacePoses.Count > 0;
     
-    
+    public Dictionary<(ushort, ushort), Dictionary<BonePoseInfoId, List<BonePoseData>>> BodyPoses = [];
+    public Dictionary<ushort, Dictionary<BonePoseInfoId, List<BonePoseData>>> FacePoses = [];
     public bool Frozen = false;
 
     public string Serialize() {
