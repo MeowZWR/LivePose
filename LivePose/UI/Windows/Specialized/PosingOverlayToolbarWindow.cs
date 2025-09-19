@@ -467,14 +467,14 @@ public class PosingOverlayToolbarWindow : Window
         using(ImRaii.PushFont(UiBuilder.IconFont))
         {
             if(ImGui.Button($"{FontAwesomeIcon.Cog.ToIconString()}###import_options", new Vector2(buttonSize)))
-                ImGui.OpenPopup("import_options_popup_pose_tooblar");
+                ImGui.OpenPopup("import_options_popup_pose_toolbar");
         }
         if(ImGui.IsItemHovered())
             ImGui.SetTooltip("Import Options");
 
         ImGui.PopStyleColor();
 
-        using(var popup = ImRaii.Popup("import_options_popup_pose_tooblar"))
+        using(var popup = ImRaii.Popup("import_options_popup_pose_toolbar"))
         {
             if(popup.Success)
             {

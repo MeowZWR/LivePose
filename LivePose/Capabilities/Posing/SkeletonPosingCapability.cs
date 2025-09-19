@@ -168,8 +168,8 @@ namespace LivePose.Capabilities.Posing
             };
         }
 
-        private (ushort, ushort) activeBodyPose;
-        private ushort activeFacePose;
+        public (ushort, ushort) ActiveBodyTimelines { get; private set; }
+        public ushort ActiveFaceTimeline { get; private set; }
         
         public unsafe void ApplyTimelinePose() {
             var chr = (Character*)Character.Address;
@@ -180,22 +180,43 @@ namespace LivePose.Capabilities.Posing
         }
 
         private void ApplyTimelinePose(ushort main, ushort upperBody, ushort face) {
-            activeBodyPose = (main, upperBody);
-            activeFacePose = face;
+            ActiveBodyTimelines = (main, upperBody);
+            ActiveFaceTimeline = face;
 
-            if(BodyPoses.TryGetValue(activeBodyPose, out var bodyPose)) {
+            if(BodyPoses.TryGetValue(ActiveBodyTimelines, out var bodyPose)) {
                 PoseInfo = bodyPose;
             } else {
-                PoseInfo = BodyPoses[activeBodyPose] = new PoseInfo();
+                if(Character.ObjectIndex == 0) {
+                    PoseInfo = BodyPoses[ActiveBodyTimelines] = new PoseInfo();
+                } else {
+                    PoseInfo = new PoseInfo();
+                }
             }
 
             PoseInfo.Clear(FilterFaceBones);
                 
-            if(!FacePoses.TryGetValue(activeFacePose, out var facePose)) {
-                facePose = FacePoses[activeFacePose] = new PoseInfo();
+            if(FacePoses.TryGetValue(ActiveFaceTimeline, out var facePose)) {
+                PoseInfo.Overlay(facePose, FilterFaceBones);
             }
+        }
+        
+        
+        
+        public void UpdatePoseCache(bool announceToHeels = false) {
+            if (ActiveFaceTimeline != 0)
+                FacePoses[ActiveFaceTimeline] = PoseInfo.Clone(FilterFaceBones);
+            if (ActiveBodyTimelines != (0, 0))
+                BodyPoses[ActiveBodyTimelines] = PoseInfo.Clone(FilterNonFaceBones);
 
-            PoseInfo.Overlay(facePose, FilterFaceBones);
+
+            if(announceToHeels) {
+                _framework.RunOnTick(() => {
+                    if(_heelsService.IsAvailable) {
+                        _heelsService.SetPlayerPoseTag();
+                            
+                    }
+                }, delayTicks: 1);
+            }
         }
         
         private unsafe void UpdateCache() {
@@ -204,22 +225,9 @@ namespace LivePose.Capabilities.Posing
             var currentUpperBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(1);
             var currentFacePose =  chr->Timeline.TimelineSequencer.GetSlotTimeline(2);
 
-            if(activeBodyPose != (currentBodyPose, currentUpperBodyPose) || currentFacePose != activeFacePose) {
+            if(ActiveBodyTimelines != (currentBodyPose, currentUpperBodyPose) || currentFacePose != ActiveFaceTimeline) {
                 if (chr->ObjectIndex == 0) {
-                    if (activeFacePose != 0)
-                        FacePoses[activeFacePose] = PoseInfo.Clone(FilterFaceBones);
-                    if (activeBodyPose != (0, 0))
-                        BodyPoses[activeBodyPose] = PoseInfo.Clone();
-
-
-                    _framework.RunOnTick(() => {
-                        if(_heelsService.IsAvailable) {
-                            _heelsService.SetPlayerPoseTag();
-                            
-                        }
-                    }, delayTicks: 1);
-
-
+                    UpdatePoseCache(true);
                 }
 
                 ApplyTimelinePose(currentBodyPose, currentUpperBodyPose, currentFacePose);
@@ -251,6 +259,8 @@ namespace LivePose.Capabilities.Posing
             return bone.IsFaceBone;
         }
 
+        private bool FilterNonFaceBones(BonePoseInfoId obj) => !FilterFaceBones(obj);
+
         private void OnSkeletonUpdateStart()
         {
             UpdateCache();
@@ -271,5 +281,9 @@ namespace LivePose.Capabilities.Posing
             PoseInfo.Clear();
             base.Dispose();
         }
+        
+        public string? IpcDataJson { get; set; }
+
+
     }
 }

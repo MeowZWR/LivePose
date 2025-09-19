@@ -1,4 +1,5 @@
-﻿using Dalamud.Plugin.Services;
+﻿using System;
+using Dalamud.Plugin.Services;
 using LivePose.Capabilities.Actor;
 using LivePose.Config;
 using LivePose.Core;
@@ -123,8 +124,8 @@ public class PosingCapability : ActorCharacterCapability
         }
     }
 
-    public void ImportPose(OneOf<PoseFile, CMToolPoseFile> rawPoseFile, PoseImporterOptions? options = null, bool asExpression = false, bool asScene = false, bool asIPCpose = false, bool asBody = false,
-        bool freezeOnLoad = false, bool asProp = false, TransformComponents? transformComponents = null, bool? applyModelTransformOverride = null)
+    public void ImportPose(OneOf<PoseFile, CMToolPoseFile, LivePoseFile> rawPoseFile, PoseImporterOptions? options = null, bool asExpression = false, bool asScene = false, bool asIPCpose = false, bool asBody = false,
+        bool freezeOnLoad = false, bool asProp = false, TransformComponents? transformComponents = null)
     {
         if(Actor.TryGetCapability<ActionTimelineCapability>(out var actionTimeline))
         {
@@ -133,9 +134,9 @@ public class PosingCapability : ActorCharacterCapability
             actionTimeline.StopSpeedAndResetTimeline(() =>
             {
                 ImportPose_Internal(rawPoseFile, options, reset: false, reconcile: false, asExpression: asExpression, asScene: asScene,
-                    asIPCpose: asIPCpose, asBody: asBody, asProp: asProp, transformComponents: transformComponents, applyModelTransformOverride: applyModelTransformOverride);
+                    asIPCpose: asIPCpose, asBody: asBody, asProp: asProp, transformComponents: transformComponents, applyModelTransformOverride: false);
 
-            }, !(ConfigurationService.Instance.Configuration.Posing.FreezeActorOnPoseImport || freezeOnLoad));
+            }, true);
         }
         else
         {
@@ -145,13 +146,20 @@ public class PosingCapability : ActorCharacterCapability
 
     // TODO change this boolean hell into flags after Scenes are added
     PoseFile? tempPose;
-    internal void ImportPose_Internal(OneOf<PoseFile, CMToolPoseFile> rawPoseFile, PoseImporterOptions? options = null, bool generateSnapshot = true, bool reset = true, bool reconcile = true,
+    internal void ImportPose_Internal(OneOf<PoseFile, CMToolPoseFile, LivePoseFile> rawPoseFile, PoseImporterOptions? options = null, bool generateSnapshot = true, bool reset = true, bool reconcile = true,
         bool asExpression = false, bool expressionPhase2 = false, bool asScene = false, bool asIPCpose = false, bool asBody = false, bool asProp = false,
         TransformComponents? transformComponents = null, bool? applyModelTransformOverride = null)
     {
+
+        if(rawPoseFile.IsT2) {
+            LivePose.Log.Warning("Live Pose Import not ready");
+            return;
+        }
+        
         var poseFile = rawPoseFile.Match(
                 poseFile => poseFile,
-                cmToolPoseFile => cmToolPoseFile.Upgrade()
+                cmToolPoseFile => cmToolPoseFile.Upgrade(),
+                _ => throw new IndexOutOfRangeException()
             );
 
         if(poseFile.Bones.Count == 0 && poseFile.MainHand.Count == 0 && poseFile.OffHand.Count == 0)
