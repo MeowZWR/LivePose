@@ -46,12 +46,12 @@ public class FileUIHelpers
 
                 var buttonSize = size / 8;
 
-                ImGui.Checkbox("Freeze Actor on Import", ref freezeOnLoad);
+                ImGui.Checkbox("导入时冻结角色", ref freezeOnLoad);
 
                 ImGui.Separator();
 
                 using(ImRaii.Disabled(true))
-                    ImGui.Checkbox("Smart Import", ref smartDefaults);
+                    ImGui.Checkbox("智能导入", ref smartDefaults);
 
                 transformComponents ??= capability.PosingService.DefaultImporterOptions.TransformComponents;
 
@@ -59,7 +59,7 @@ public class FileUIHelpers
                 {
                     using(ImRaii.Disabled(doExpression))
                     {
-                        if(ImBrio.ToggelFontIconButton("ImportPosition", FontAwesomeIcon.ArrowsUpDownLeftRight, buttonSize, transformComponents.Value.HasFlag(TransformComponents.Position), hoverText: "Import Position"))
+                        if(ImBrio.ToggelFontIconButton("ImportPosition", FontAwesomeIcon.ArrowsUpDownLeftRight, buttonSize, transformComponents.Value.HasFlag(TransformComponents.Position), hoverText: "导入位置"))
                         {
                             if(transformComponents.Value.HasFlag(TransformComponents.Position))
                                 transformComponents &= ~TransformComponents.Position;
@@ -67,7 +67,7 @@ public class FileUIHelpers
                                 transformComponents |= TransformComponents.Position;
                         }
                         ImGui.SameLine();
-                        if(ImBrio.ToggelFontIconButton("ImportRotation", FontAwesomeIcon.ArrowsSpin, buttonSize, transformComponents.Value.HasFlag(TransformComponents.Rotation), hoverText: "Import Rotation"))
+                        if(ImBrio.ToggelFontIconButton("ImportRotation", FontAwesomeIcon.ArrowsSpin, buttonSize, transformComponents.Value.HasFlag(TransformComponents.Rotation), hoverText: "导入旋转"))
                         {
                             if(transformComponents.Value.HasFlag(TransformComponents.Rotation))
                                 transformComponents &= ~TransformComponents.Rotation;
@@ -75,7 +75,7 @@ public class FileUIHelpers
                                 transformComponents |= TransformComponents.Rotation;
                         }
                         ImGui.SameLine();
-                        if(ImBrio.ToggelFontIconButton("ImportScale", FontAwesomeIcon.ExpandAlt, buttonSize, transformComponents.Value.HasFlag(TransformComponents.Scale), hoverText: "Import Scale"))
+                        if(ImBrio.ToggelFontIconButton("ImportScale", FontAwesomeIcon.ExpandAlt, buttonSize, transformComponents.Value.HasFlag(TransformComponents.Scale), hoverText: "导入缩放"))
                         {
                             if(transformComponents.Value.HasFlag(TransformComponents.Scale))
                                 transformComponents &= ~TransformComponents.Scale;
@@ -85,7 +85,7 @@ public class FileUIHelpers
                     }
 
                     ImGui.SameLine();
-                    if(ImBrio.ToggelFontIconButton("ImportTransform", FontAwesomeIcon.ArrowsToCircle, buttonSize, doTransform, hoverText: "Import Model Transform"))
+                    if(ImBrio.ToggelFontIconButton("ImportTransform", FontAwesomeIcon.ArrowsToCircle, buttonSize, doTransform, hoverText: "导入模型变换"))
                     {
                         doTransform = !doTransform;
                     }
@@ -98,38 +98,38 @@ public class FileUIHelpers
 
                 ImGui.Separator();
 
-                if(ImBrio.ToggelButton("Import Body", new(size.X, 35), doBody))
+                if(ImBrio.ToggelButton("导入身体", new(size.X, 35), doBody))
                 {
                     doBody = !doBody;
                 }
 
-                if(ImBrio.ToggelButton("Import Expression", new(size.X, 35), doExpression))
+                if(ImBrio.ToggelButton("导入表情", new(size.X, 35), doExpression))
                 {
                     doExpression = !doExpression;
                 }
 
                 using(ImRaii.Disabled(doExpression || doBody))
                 {
-                    if(ImBrio.Button("Import Options", FontAwesomeIcon.Cog, new(size.X, 25), centerTest: true, hoverText: "Import Options"))
+                    if(ImBrio.Button("导入选项", FontAwesomeIcon.Cog, new(size.X, 25), centerTest: true, hoverText: "导入选项"))
                         ImGui.OpenPopup("import_optionsImportPoseMenuPopup");
                 }
 
                 ImGui.Separator();
 
-                if(ImGui.Button("Import", new(size.X, 25)))
+                if(ImGui.Button("导入", new(size.X, 25)))
                 {
                     ShowImportPoseModal(capability, freezeOnLoad: freezeOnLoad, transformComponents: transformComponents, applyModelTransformOverride: doTransform);
                 }
 
                 ImGui.Separator();
 
-                if(ImGui.Button("Import A-Pose", new(size.X, 25)))
+                if(ImGui.Button("导入A姿势", new(size.X, 25)))
                 {
                     capability.LoadResourcesPose("Data.BrioAPose.pose", freezeOnLoad: freezeOnLoad, asBody: true);
                     ImGui.CloseCurrentPopup();
                 }
 
-                if(ImGui.Button("Import T-Pose", new(size.X, 25)))
+                if(ImGui.Button("导入T姿势", new(size.X, 25)))
                 {
                     capability.LoadResourcesPose("Data.BrioTPose.pose", freezeOnLoad: freezeOnLoad, asBody: true);
                     ImGui.CloseCurrentPopup();
@@ -211,7 +211,7 @@ public class FileUIHelpers
 
     public static void ShowExportPoseModal(PosingCapability capability)
     {
-        UIManager.Instance.FileDialogManager.SaveFileDialog("Export Pose###export_pose", "Pose File (*.pose){.pose}", "brio", ".pose",
+        UIManager.Instance.FileDialogManager.SaveFileDialog("导出姿势###export_pose", "Pose File (*.pose){.pose}", "brio", ".pose",
                 (success, path) =>
                 {
                     if(success)

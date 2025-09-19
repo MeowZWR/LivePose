@@ -33,7 +33,7 @@ public static class PosingEditorCommon
                 Game.Posing.Skeletons.Bone? bone = posing.SkeletonPosing.GetBone(selectedIsBone.Value);
                 if(bone != null && bone.Skeleton.IsValid && bone.Freeze)
                 {
-                    ImGui.Text("This bone's transform values are frozen.");
+                    ImGui.Text("该骨骼的变换值已被冻结。");
                 }
             }
         }
@@ -48,7 +48,7 @@ public static class PosingEditorCommon
             ImGui.Separator();
 
             var selected = options.TransformComponents.HasFlag(TransformComponents.Position);
-            if(ImGui.Checkbox("Position", ref selected))
+            if(ImGui.Checkbox("位置", ref selected))
             {
                 if(selected)
                     options.TransformComponents |= TransformComponents.Position;
@@ -57,7 +57,7 @@ public static class PosingEditorCommon
             }
 
             selected = options.TransformComponents.HasFlag(TransformComponents.Rotation);
-            if(ImGui.Checkbox("Rotation", ref selected))
+            if(ImGui.Checkbox("旋转", ref selected))
             {
                 if(selected)
                     options.TransformComponents |= TransformComponents.Rotation;
@@ -66,7 +66,7 @@ public static class PosingEditorCommon
             }
 
             selected = options.TransformComponents.HasFlag(TransformComponents.Scale);
-            if(ImGui.Checkbox("Scale", ref selected))
+            if(ImGui.Checkbox("缩放", ref selected))
             {
                 if(selected)
                     options.TransformComponents |= TransformComponents.Scale;
@@ -77,7 +77,7 @@ public static class PosingEditorCommon
             ImGui.Separator();
 
             selected = options.ApplyModelTransform;
-            if(ImGui.Checkbox("Model Transform", ref selected))
+            if(ImGui.Checkbox("应用模型变换", ref selected))
             {
                 options.ApplyModelTransform = selected;
             }
@@ -86,7 +86,7 @@ public static class PosingEditorCommon
 
     public static bool DrawBoneFilterEditor(BoneFilter filter) {
         var modified = false;
-        if(ImBrio.FontIconButton("select_all", Dalamud.Interface.FontAwesomeIcon.Check, "Select All"))
+        if(ImBrio.FontIconButton("select_all", Dalamud.Interface.FontAwesomeIcon.Check, "全选"))
         {
             filter.EnableAll();
             modified = true;
@@ -94,7 +94,7 @@ public static class PosingEditorCommon
 
         ImGui.SameLine();
 
-        if(ImBrio.FontIconButton("select_none", Dalamud.Interface.FontAwesomeIcon.Minus, "Select None"))
+        if(ImBrio.FontIconButton("select_none", Dalamud.Interface.FontAwesomeIcon.Minus, "全不选"))
         {
             filter.DisableAll();
             modified = true;
