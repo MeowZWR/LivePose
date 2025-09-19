@@ -49,7 +49,7 @@ public class PosingGraphicalWindow : Window, IDisposable
     int _selectedPane = 0;
     private bool _hideControlPane = false;
 
-    public PosingGraphicalWindow(EntityManager entityManager, HistoryService groupedUndoService, ConfigurationService configurationService, PosingService posingService, GPoseService gPoseService, IClientState clientState) : base($"{LivePose.Name} - POSING###livepose_posing_graphical_window")
+    public PosingGraphicalWindow(EntityManager entityManager, HistoryService groupedUndoService, ConfigurationService configurationService, PosingService posingService, GPoseService gPoseService, IClientState clientState) : base($"{LivePose.Name} - 姿势###livepose_posing_graphical_window")
     {
         Namespace = "livepose_posing_graphical_namespace";
 
@@ -114,7 +114,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         posing.Hover = new None();
         _closestHover = float.MaxValue;
 
-        WindowName = $"{LivePose.Name} - Posing - {posing.Entity.FriendlyName}###livepose_posing_graphical_window";
+        WindowName = $"{LivePose.Name} - 姿势 - {posing.Entity.FriendlyName}###livepose_posing_graphical_window";
 
         DrawGlobalButtons(posing);
 
@@ -166,14 +166,14 @@ public class PosingGraphicalWindow : Window, IDisposable
         posing.LastHover = posing.Hover;
     }
 
-    private readonly string[] _bonePages = ["Body Page", "Face Page"];
+    private readonly string[] _bonePages = ["身体", "面部"];
     private void DrawGlobalButtons(PosingCapability posing)
     {
         const float buttonWidth = 28;
 
         if(_entityManager.TryGetCapabilityFromSelectedEntity<ActionTimelineCapability>(out var capability, considerParents: true))
         {
-            if(ImBrio.ToggelButton("Freeze Character", new Vector2(110, 0), capability.SpeedMultiplier == 0, hoverText: capability.SpeedMultiplierOverride == 0 ? "Un-Freeze Character" : "Freeze Character"))
+            if(ImBrio.ToggelButton("冻结角色", new Vector2(110, 0), capability.SpeedMultiplier == 0, hoverText: capability.SpeedMultiplierOverride == 0 ? "解冻角色" : "冻结角色"))
             {
                 if(capability.SpeedMultiplierOverride == 0)
                     capability.ResetOverallSpeedOverride();
@@ -194,7 +194,7 @@ public class PosingGraphicalWindow : Window, IDisposable
             posing.OverlayOpen = !posing.OverlayOpen;
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip(posing.OverlayOpen ? "Close Overlay" : "Show Overlay");
+            ImGui.SetTooltip(posing.OverlayOpen ? "关闭叠加层" : "显示叠加层");
 
         ImGui.SameLine();
 
@@ -205,7 +205,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         }
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip(posing.TransformWindowOpen ? "Close Transform Window" : "Show Transform Window");
+            ImGui.SetTooltip(posing.TransformWindowOpen ? "关闭变换窗口" : "显示变换窗口");
 
         ImGui.SameLine();
 
@@ -213,7 +213,7 @@ public class PosingGraphicalWindow : Window, IDisposable
             ImGui.OpenPopup("graphic_bone_search_popup");
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Bone Search");
+            ImGui.SetTooltip("骨骼搜索");
 
         using(var popup = ImRaii.Popup("graphic_bone_search_popup"))
         {
@@ -235,7 +235,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         }
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Undo");
+            ImGui.SetTooltip("撤销");
 
         ImGui.SameLine();
 
@@ -246,7 +246,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         }
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Redo");
+            ImGui.SetTooltip("重做");
 
         ImGui.SameLine();
 
@@ -258,7 +258,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         }
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Reset Pose");
+            ImGui.SetTooltip("重置姿势");
 
         ImGui.SameLine();
 
@@ -269,7 +269,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         }
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip(_hideControlPane ? "Show Control Pane" : "Hide Control Pane");
+            ImGui.SetTooltip(_hideControlPane ? "显示控制面板" : "隐藏控制面板");
     }
 
     private void DrawSelection(PosingCapability posing)
@@ -307,18 +307,18 @@ public class PosingGraphicalWindow : Window, IDisposable
         }
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Select Parent");
+            ImGui.SetTooltip("选择父骨骼");
 
         // Clear Selection
         ImGui.SameLine();
         using(ImRaii.Disabled(posing.Selected.Value is None))
         {
-            if(ImGui.Button($"Clear###clear_selected", new Vector2(buttonWidth, 0)))
+            if(ImGui.Button($"清除###clear_selected", new Vector2(buttonWidth, 0)))
                 posing.ClearSelection();
         }
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Clear Selection");
+            ImGui.SetTooltip("清除选择");
     }
 
     private void DrawImportButtons(PosingCapability posing)
@@ -326,7 +326,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         float settingsSize = 28;
         var buttonSize = new Vector2(((ImGui.GetContentRegionAvail().X - settingsSize) / 2.0f) - (ImGui.GetStyle().FramePadding.X * 2), 0);
 
-        if(ImBrio.Button("Import##import_pose", FontAwesomeIcon.FileImport, buttonSize))
+        if(ImBrio.Button("导入##import_pose", FontAwesomeIcon.FileImport, buttonSize))
             ImGui.OpenPopup("DrawImportPoseMenuPopup");
 
         FileUIHelpers.DrawImportPoseMenuPopup(posing, false);
@@ -339,7 +339,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         ImGui.SameLine();
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Import Options");
+            ImGui.SetTooltip("导入选项");
 
         using(var popup = ImRaii.Popup("import_options_popup_posing_graphical"))
         {

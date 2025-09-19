@@ -40,7 +40,7 @@ public class PosingOverlayToolbarWindow : Window
 
     private const string _boneFilterPopupName = "livepose_bone_filter_popup";
 
-    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
+    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow) : base($"{LivePose.Name} 叠加层###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
     {
         Namespace = "livepose_posing_overlay_toolbar_namespace";
 
@@ -58,7 +58,7 @@ public class PosingOverlayToolbarWindow : Window
             {
                 Icon = FontAwesomeIcon.Cog,
                 Click = _ => settingsWindow.Toggle(),
-                ShowTooltip = () => ImGui.SetTooltip("Settings")
+                ShowTooltip = () => ImGui.SetTooltip("设置")
             }
         ];
         
@@ -165,7 +165,7 @@ public class PosingOverlayToolbarWindow : Window
                 _posingService.CoordinateMode = _posingService.CoordinateMode == PosingCoordinateMode.Local ? PosingCoordinateMode.World : PosingCoordinateMode.Local;
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip(_posingService.CoordinateMode == PosingCoordinateMode.Local ? "Switch to World" : "Switch to Local");
+            ImGui.SetTooltip(_posingService.CoordinateMode == PosingCoordinateMode.Local ? "切换到世界坐标" : "切换到本地坐标");
 
         ImGui.SameLine();
 
@@ -178,7 +178,7 @@ public class PosingOverlayToolbarWindow : Window
             }
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Toggle Transform Window");
+            ImGui.SetTooltip("切换变换窗口");
         
         ImGui.SameLine();
 
@@ -190,7 +190,7 @@ public class PosingOverlayToolbarWindow : Window
             }
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Toggle Advanced Pose Window");
+            ImGui.SetTooltip("切换高级姿势窗口");
 
         ImGui.SameLine();
 
@@ -200,7 +200,7 @@ public class PosingOverlayToolbarWindow : Window
                 _overlayWindow.IsOpen = false;
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Close Overlay");
+            ImGui.SetTooltip("关闭叠加层");
 
         ImGui.Separator();
 
@@ -216,7 +216,7 @@ public class PosingOverlayToolbarWindow : Window
             }
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Position");
+            ImGui.SetTooltip("位置");
 
         ImGui.SameLine();
 
@@ -230,7 +230,7 @@ public class PosingOverlayToolbarWindow : Window
             }
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Rotation");
+            ImGui.SetTooltip("旋转");
 
         ImGui.SameLine();
 
@@ -243,7 +243,7 @@ public class PosingOverlayToolbarWindow : Window
             }
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Scale");
+            ImGui.SetTooltip("缩放");
 
         ImGui.SameLine();
 
@@ -258,7 +258,7 @@ public class PosingOverlayToolbarWindow : Window
             }
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Universal");
+            ImGui.SetTooltip("通用");
 
         ImGui.Separator();
 
@@ -268,7 +268,7 @@ public class PosingOverlayToolbarWindow : Window
                 ImGui.OpenPopup(_boneFilterPopupName);
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Bone Filter");
+            ImGui.SetTooltip("骨骼过滤");
 
         ImGui.SameLine();
 
@@ -293,7 +293,7 @@ public class PosingOverlayToolbarWindow : Window
             }
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Select Parent");
+            ImGui.SetTooltip("选择父骨骼");
 
         ImGui.SameLine();
 
@@ -306,7 +306,7 @@ public class PosingOverlayToolbarWindow : Window
             }
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Clear Selection");
+            ImGui.SetTooltip("清除选择");
         
         
         // IK RED
@@ -327,7 +327,7 @@ public class PosingOverlayToolbarWindow : Window
             }
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Inverse Kinematics");
+            ImGui.SetTooltip("反向动力学");
 
         ImGui.SameLine();
         
@@ -360,7 +360,7 @@ public class PosingOverlayToolbarWindow : Window
         }
         
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Reset Inverse Kinematics");
+            ImGui.SetTooltip("重置反向动力学");
 
         ImGui.SameLine();
         using(ImRaii.PushFont(UiBuilder.IconFont))
@@ -369,7 +369,7 @@ public class PosingOverlayToolbarWindow : Window
                 ImGui.OpenPopup("overlay_bone_search_popup");
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Bone Search");
+            ImGui.SetTooltip("骨骼搜索");
 
         if(_entityManager.TryGetCapabilityFromSelectedEntity<ActionTimelineCapability>(out var timelineCapability)) {
             ImGui.SameLine();
@@ -393,7 +393,7 @@ public class PosingOverlayToolbarWindow : Window
             
 
             if(ImGui.IsItemHovered())
-                ImGui.SetTooltip($"{(timelineCapability.SpeedMultiplierOverride == 0 ? "Un-" : "")}Freeze Character");
+                ImGui.SetTooltip($"{(timelineCapability.SpeedMultiplierOverride == 0 ? "解冻" : "冻结")}角色");
 
         }
 
@@ -410,7 +410,7 @@ public class PosingOverlayToolbarWindow : Window
             }
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Undo");
+            ImGui.SetTooltip("撤销");
 
         ImGui.SameLine();
 
@@ -425,7 +425,7 @@ public class PosingOverlayToolbarWindow : Window
             }
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Redo");
+            ImGui.SetTooltip("重做");
 
         ImGui.SameLine();
 
@@ -438,7 +438,7 @@ public class PosingOverlayToolbarWindow : Window
             }
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Reset Pose");
+            ImGui.SetTooltip("重置姿势");
 
         ImGui.Separator();
 
@@ -448,7 +448,7 @@ public class PosingOverlayToolbarWindow : Window
                 ImGui.OpenPopup("DrawImportPoseMenuPopup");
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Import Pose");
+            ImGui.SetTooltip("导入姿势");
 
         FileUIHelpers.DrawImportPoseMenuPopup(posing, false);
 
@@ -460,7 +460,7 @@ public class PosingOverlayToolbarWindow : Window
                 FileUIHelpers.ShowExportPoseModal(posing);
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Export Pose");
+            ImGui.SetTooltip("导出姿势");
 
         ImGui.SameLine();
 
@@ -470,7 +470,7 @@ public class PosingOverlayToolbarWindow : Window
                 ImGui.OpenPopup("import_options_popup_pose_tooblar");
         }
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Import Options");
+            ImGui.SetTooltip("导入选项");
 
         ImGui.PopStyleColor();
 

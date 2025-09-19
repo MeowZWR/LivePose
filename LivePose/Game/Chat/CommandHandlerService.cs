@@ -26,7 +26,7 @@ public class CommandHandlerService : IDisposable
 
         _commandManager.AddHandler(LivePoseCommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "Toggles the LivePose overlay.",
+            HelpMessage = "切换 LivePose 叠加层显示。",
             ShowInHelp = true,
         });
     }
@@ -69,12 +69,12 @@ public class CommandHandlerService : IDisposable
 
     private void PrintHelp()
     {
-        _chatGui.Print("Valid Brio Commands Are:");
-        _chatGui.Print("<none> - Toggle main Brio window");
-        _chatGui.Print("window - Toggle main Brio window");
-        _chatGui.Print("settings - Toggle Brio settings window");
-        _chatGui.Print("about - Toggle Brio info window");
-        _chatGui.Print("help - Print this help prompt");
+        _chatGui.Print("可用的 LivePose 指令有：");
+        _chatGui.Print("<无> - 切换主 LivePose 窗口");
+        _chatGui.Print("window - 切换主 LivePose 窗口");
+        _chatGui.Print("settings - 切换 LivePose 设置窗口");
+        _chatGui.Print("about - 切换 LivePose 信息窗口");
+        _chatGui.Print("help - 显示此帮助提示");
     }
 
     public void Dispose()

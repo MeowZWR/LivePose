@@ -25,7 +25,7 @@ public class PosingTransformWindow : Window
 
     private Matrix4x4? _trackingMatrix;
 
-    public PosingTransformWindow(EntityManager entityManager, PosingService posingService, IClientState clientState) : base($"{LivePose.Name} - TRANSFORM###livepose_transform_window", ImGuiWindowFlags.AlwaysAutoResize)
+    public PosingTransformWindow(EntityManager entityManager, PosingService posingService, IClientState clientState) : base($"{LivePose.Name} - 变换###livepose_transform_window", ImGuiWindowFlags.AlwaysAutoResize)
     {
         Namespace = "livepose_transform_namespace";
 
@@ -59,7 +59,7 @@ public class PosingTransformWindow : Window
             return;
         }
 
-        WindowName = $"{LivePose.Name} Transform - {posing.Entity.FriendlyName}###livepose_transform_window";
+        WindowName = $"{LivePose.Name} 变换 - {posing.Entity.FriendlyName}###livepose_transform_window";
 
         PosingEditorCommon.DrawSelectionName(posing);
 
@@ -108,7 +108,7 @@ public class PosingTransformWindow : Window
         }
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Select Parent");
+            ImGui.SetTooltip("选择父骨骼");
 
         // Clear Selection
         ImGui.SameLine();
@@ -119,7 +119,7 @@ public class PosingTransformWindow : Window
         }
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Clear Selection");
+            ImGui.SetTooltip("清除选择");
     }
 
     private unsafe void DrawGizmo()
@@ -180,7 +180,7 @@ public class PosingTransformWindow : Window
             _posingService.CoordinateMode = _posingService.CoordinateMode == PosingCoordinateMode.Local ? PosingCoordinateMode.World : PosingCoordinateMode.Local;
 
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip(_posingService.CoordinateMode == PosingCoordinateMode.World ? "Switch to Local" : "Switch to World");
+            ImGui.SetTooltip(_posingService.CoordinateMode == PosingCoordinateMode.World ? "切换到本地坐标" : "切换到世界坐标");
 
 
         Vector2 gizmoSize = new(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().X);

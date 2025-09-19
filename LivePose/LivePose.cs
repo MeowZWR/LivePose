@@ -86,7 +86,9 @@ public class LivePose : IDisposable {
                 Log.Info($"Started {Name} in {stopwatch.ElapsedMilliseconds}ms");
 
 
-                _services.GetService<GPoseService>()?.FakeGPose = !dalamudServices.ClientState.IsGPosing;
+                var gposeService = _services.GetService<GPoseService>();
+                if (gposeService != null)
+                    gposeService.FakeGPose = !dalamudServices.ClientState.IsGPosing;
 
             }
             catch(Exception e)
