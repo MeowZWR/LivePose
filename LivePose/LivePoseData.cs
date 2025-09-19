@@ -107,13 +107,14 @@ public class LivePoseCharacterData {
 
     public bool ShouldSerializeBodyPoses() => BodyPoses.Count > 0;
     public bool ShouldSerializeFacePoses() => FacePoses.Count > 0;
-    
+    public bool ShouldSerializeCursedPose() => CursedPose != null;
     
     // public Dictionary<uint, Dictionary<BonePoseInfoId, List<BonePoseData>>> BodyPoses = [];
 
     public List<LivePoseCacheEntry> BodyPoses = [];
     public List<LivePoseCacheEntry> FacePoses = [];
     public bool Frozen = false;
+    public LivePoseData? CursedPose = null;
 
     public string Serialize() {
         return JsonConvert.SerializeObject(this);

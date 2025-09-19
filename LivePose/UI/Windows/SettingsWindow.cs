@@ -180,8 +180,15 @@ public class SettingsWindow : Window
 
     private void DrawPosingGeneralSection()
     {
-        if(ImGui.CollapsingHeader("General", ImGuiTreeNodeFlags.DefaultOpen))
-        {
+        if(ImGui.CollapsingHeader("General", ImGuiTreeNodeFlags.DefaultOpen)) {
+
+            var curseMode = _configurationService.Configuration.Posing.CursedMode;
+            if(ImGui.Checkbox("Cursed Mode", ref curseMode)) {
+                _configurationService.Configuration.Posing.CursedMode = curseMode;
+                _configurationService.ApplyChange();
+            }
+            
+            
             var undoStackSize = _configurationService.Configuration.Posing.UndoStackSize;
             if(ImGui.DragInt("Undo History", ref undoStackSize, 1, 0, 100))
             {

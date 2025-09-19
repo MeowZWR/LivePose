@@ -164,24 +164,23 @@ public class IpcService : IDisposable
         if(objectIndex == 0) {
             skeletonPosingCapability.UpdatePoseCache();
         }
-        
-        
-        
-        
-        var data = new LivePoseCharacterData();
-        foreach(var (key, p) in skeletonPosingCapability.BodyPoses) {
 
-            
-            var pose = SerializePose(skeletonPosingCapability, p);
-            if(pose.Count > 0) {
-                data.BodyPoses.Add(new LivePoseCacheEntry(key.Item1, key.Item2, pose));
+        var data = new LivePoseCharacterData();
+        if(_configurationService.Configuration.Posing.CursedMode) {
+            data.CursedPose = SerializePose(skeletonPosingCapability, skeletonPosingCapability.PoseInfo);
+        } else {
+            foreach(var (key, p) in skeletonPosingCapability.BodyPoses) {
+                var pose = SerializePose(skeletonPosingCapability, p);
+                if(pose.Count > 0) {
+                    data.BodyPoses.Add(new LivePoseCacheEntry(key.Item1, key.Item2, pose));
+                }
             }
-        }
         
-        foreach(var (key, p) in skeletonPosingCapability.FacePoses) {
-            var pose = SerializePose(skeletonPosingCapability, p);
-            if(pose.Count > 0)
-                data.FacePoses.Add(new LivePoseCacheEntry(key, pose));
+            foreach(var (key, p) in skeletonPosingCapability.FacePoses) {
+                var pose = SerializePose(skeletonPosingCapability, p);
+                if(pose.Count > 0)
+                    data.FacePoses.Add(new LivePoseCacheEntry(key, pose));
+            }
         }
         
         data.Frozen = timelineCapability.SpeedMultiplierOverride == 0;
@@ -218,31 +217,31 @@ public class IpcService : IDisposable
             return;
         }
 
-        LivePose.Log.Warning($"Deserializing: {data}");
-
         skeletonPosingCapability.IpcDataJson = data;
-        
-        
         var livePoseData = LivePoseCharacterData.Deserialize(data);
         
         _framework.RunOnTick(() => {
             skeletonPosingCapability.ResetPose();
-            
             if(livePoseData == null) {
                 return;
             }
+            
             LivePose.Log.Verbose($"Applying Pose to GameObject#{obj.ObjectIndex} => {data}");
+            skeletonPosingCapability.CursedMode = livePoseData.CursedPose != null;
+            if(livePoseData.CursedPose != null) {
+                skeletonPosingCapability.PoseInfo = DeserializePose(livePoseData.CursedPose);
+            } else {
+                foreach(var pose in livePoseData.BodyPoses) {
+                    skeletonPosingCapability.BodyPoses[(pose.TimelineId, pose.SecondaryTimelineId)] = DeserializePose(pose.Pose);
+                }
             
-            
-            foreach(var pose in livePoseData.BodyPoses) {
-                skeletonPosingCapability.BodyPoses[(pose.TimelineId, pose.SecondaryTimelineId)] = DeserializePose(pose.Pose);
+                foreach(var pose in livePoseData.FacePoses) {
+                    skeletonPosingCapability.FacePoses[pose.TimelineId] = DeserializePose(pose.Pose);
+                }
+                
+                skeletonPosingCapability.ApplyTimelinePose();
             }
             
-            foreach(var pose in livePoseData.FacePoses) {
-                skeletonPosingCapability.FacePoses[pose.TimelineId] = DeserializePose(pose.Pose);
-            }
-
-            skeletonPosingCapability.ApplyTimelinePose();
             if(livePoseData.Frozen) {
                 timelineCapability.SetOverallSpeedOverride(0f);
             } else {

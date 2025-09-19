@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using LivePose.Config;
 using LivePose.IPC;
 
 namespace LivePose.Capabilities.Posing
@@ -22,6 +23,7 @@ namespace LivePose.Capabilities.Posing
         private readonly PosingService _posingService;
         private readonly IFramework _framework;
         private readonly HeelsService _heelsService;
+        private readonly ConfigurationService _configurationService;
 
 
         public Skeleton? CharacterSkeleton { get; private set; }
@@ -41,16 +43,28 @@ namespace LivePose.Capabilities.Posing
         private readonly List<Action<Bone, BonePoseInfo>> _transitiveActions = [];
 
 
-        public SkeletonPosingCapability(ActorEntity parent, SkeletonService skeletonService, PosingService posingService, HeelsService heelsService, IFramework framework) : base(parent)
+        public SkeletonPosingCapability(ActorEntity parent, SkeletonService skeletonService, PosingService posingService, HeelsService heelsService, IFramework framework, ConfigurationService configurationService) : base(parent)
         {
             _skeletonService = skeletonService;
             _posingService = posingService;
             _framework = framework;
             _heelsService = heelsService;
-
+            _configurationService = configurationService;
+            
             _skeletonService.SkeletonUpdateStart += OnSkeletonUpdateStart;
             _skeletonService.SkeletonUpdateEnd += OnSkeletonUpdateEnd;
 
+            _configurationService.OnConfigurationChanged += OnConfigurationChanged;
+            OnConfigurationChanged();
+        }
+
+        private void OnConfigurationChanged() {
+            if(Character.ObjectIndex == 0) {
+                CursedMode = _configurationService.Configuration.Posing.CursedMode;
+                if(_heelsService.IsAvailable) {
+                    _heelsService.SetPlayerPoseTag();
+                }
+            }
         }
 
         public void ResetPose()
@@ -171,7 +185,10 @@ namespace LivePose.Capabilities.Posing
         public (ushort, ushort) ActiveBodyTimelines { get; private set; }
         public ushort ActiveFaceTimeline { get; private set; }
         
+        public bool CursedMode { get; set; }
+        
         public unsafe void ApplyTimelinePose() {
+            if(CursedMode) return;
             var chr = (Character*)Character.Address;
             var currentBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(0);
             var currentUpperBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(1);
@@ -180,6 +197,7 @@ namespace LivePose.Capabilities.Posing
         }
 
         private void ApplyTimelinePose(ushort main, ushort upperBody, ushort face) {
+            if(CursedMode) return;
             ActiveBodyTimelines = (main, upperBody);
             ActiveFaceTimeline = face;
 
@@ -203,6 +221,8 @@ namespace LivePose.Capabilities.Posing
         
         
         public void UpdatePoseCache(bool announceToHeels = false) {
+            if(CursedMode) return;
+            
             if (ActiveFaceTimeline != 0)
                 FacePoses[ActiveFaceTimeline] = PoseInfo.Clone(FilterFaceBones);
             if (ActiveBodyTimelines != (0, 0))
@@ -220,19 +240,22 @@ namespace LivePose.Capabilities.Posing
         }
         
         private unsafe void UpdateCache() {
-            var chr = (Character*)Character.Address;
-            var currentBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(0);
-            var currentUpperBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(1);
-            var currentFacePose =  chr->Timeline.TimelineSequencer.GetSlotTimeline(2);
 
-            if(ActiveBodyTimelines != (currentBodyPose, currentUpperBodyPose) || currentFacePose != ActiveFaceTimeline) {
-                if (chr->ObjectIndex == 0) {
-                    UpdatePoseCache(true);
+            if(!CursedMode) {
+                var chr = (Character*)Character.Address;
+                var currentBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(0);
+                var currentUpperBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(1);
+                var currentFacePose =  chr->Timeline.TimelineSequencer.GetSlotTimeline(2);
+
+                if(ActiveBodyTimelines != (currentBodyPose, currentUpperBodyPose) || currentFacePose != ActiveFaceTimeline) {
+                    if (chr->ObjectIndex == 0) {
+                        UpdatePoseCache(true);
+                    }
+
+                    ApplyTimelinePose(currentBodyPose, currentUpperBodyPose, currentFacePose);
                 }
-
-                ApplyTimelinePose(currentBodyPose, currentUpperBodyPose, currentFacePose);
             }
-            
+
             CharacterSkeleton = _skeletonService.GetSkeleton(Character.GetCharacterBase());
             MainHandSkeleton = _skeletonService.GetSkeleton(Character.GetWeaponCharacterBase(ActorEquipSlot.MainHand));
             OffHandSkeleton = _skeletonService.GetSkeleton(Character.GetWeaponCharacterBase(ActorEquipSlot.OffHand));
@@ -275,6 +298,7 @@ namespace LivePose.Capabilities.Posing
         {
             _skeletonService.SkeletonUpdateStart -= OnSkeletonUpdateStart;
             _skeletonService.SkeletonUpdateEnd -= OnSkeletonUpdateEnd;
+            _configurationService.OnConfigurationChanged -= OnConfigurationChanged;
 
             _transitiveActions.Clear();
 
