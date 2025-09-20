@@ -224,25 +224,26 @@ namespace LivePose.Capabilities.Posing
         
         public void UpdatePoseCache(bool announceToHeels = false) {
             if(CursedMode) return;
-            if(!IsReady) return;
-            if (ActiveFaceTimeline != 0)
-                FacePoses[ActiveFaceTimeline] = PoseInfo.Clone(FilterFaceBones);
-            if (ActiveBodyTimelines != (0, 0))
-                BodyPoses[ActiveBodyTimelines] = PoseInfo.Clone(FilterNonFaceBones);
 
+            _framework.RunOnFrameworkThread(() => {
+                if(!IsReady) return;
+                if(ActiveFaceTimeline != 0)
+                    FacePoses[ActiveFaceTimeline] = PoseInfo.Clone(FilterFaceBones);
+                if(ActiveBodyTimelines != (0, 0))
+                    BodyPoses[ActiveBodyTimelines] = PoseInfo.Clone(FilterNonFaceBones);
 
-            if(announceToHeels) {
-                _framework.RunOnTick(() => {
-                    if(_heelsService.IsAvailable) {
-                        _heelsService.SetPlayerPoseTag();
-                            
-                    }
-                }, delayTicks: 1);
-            }
+                if(announceToHeels) {
+                    _framework.RunOnTick(() => {
+                        if(_heelsService.IsAvailable) {
+                            _heelsService.SetPlayerPoseTag();
+
+                        }
+                    }, delayTicks: 1);
+                }
+            }).Wait();
         }
         
         private unsafe void UpdateCache() {
-
             if(!CursedMode && IsReady) {
                 var chr = (Character*)Character.Address;
                 var currentBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(0);
