@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
 using LivePose.Game.Camera;
 using LivePose.IPC;
@@ -33,6 +34,7 @@ public class PosingOverlayWindow : Window, IDisposable
     private readonly GPoseService _gPoseService;
     private readonly HistoryService _groupedUndoService;
     private readonly IClientState _clientState;
+    private readonly ICondition _conditions;
 
     private List<ClickableItem> _selectingFrom = [];
     private Transform? _trackingTransform;
@@ -42,7 +44,7 @@ public class PosingOverlayWindow : Window, IDisposable
     private const int _gizmoId = 142857;
     private const string _boneSelectPopupName = "livepose_bone_select_popup";
 
-    public PosingOverlayWindow(EntityManager entityManager, HistoryService groupedUndoService, ConfigurationService configService, PosingService posingService, GPoseService gPoseService, IClientState clientState)
+    public PosingOverlayWindow(EntityManager entityManager, HistoryService groupedUndoService, ConfigurationService configService, PosingService posingService, GPoseService gPoseService, IClientState clientState, ICondition conditions)
         : base("##livepose_posing_overlay_window", ImGuiWindowFlags.AlwaysAutoResize, true)
     {
         Namespace = "livepose_posing_overlay_namespace";
@@ -54,6 +56,7 @@ public class PosingOverlayWindow : Window, IDisposable
         _gPoseService = gPoseService;
         _groupedUndoService = groupedUndoService;
         _clientState = clientState;
+        _conditions = conditions;
 
         _gPoseService.OnGPoseStateChange += OnGPoseStateChanged;
     }
@@ -62,7 +65,7 @@ public class PosingOverlayWindow : Window, IDisposable
         if(_clientState.IsGPosing) return false;
         if(_clientState.LocalPlayer == null) return false;
         if(_clientState.LocalPlayer.StatusFlags.HasFlag(StatusFlags.InCombat)) return false;
-        
+        if(_conditions.AnyUnsafe()) return false;
         if(!_entityManager.TryGetCapabilityFromSelectedEntity<PosingCapability>(out var posing)) {
             return false;
         }

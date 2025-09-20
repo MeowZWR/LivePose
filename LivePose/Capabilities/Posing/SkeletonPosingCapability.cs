@@ -188,6 +188,7 @@ namespace LivePose.Capabilities.Posing
         public bool CursedMode { get; set; }
         
         public unsafe void ApplyTimelinePose() {
+            if(!IsReady) return;
             if(CursedMode) return;
             var chr = (Character*)Character.Address;
             var currentBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(0);
@@ -198,6 +199,7 @@ namespace LivePose.Capabilities.Posing
 
         private void ApplyTimelinePose(ushort main, ushort upperBody, ushort face) {
             if(CursedMode) return;
+            if(!IsReady) return;
             ActiveBodyTimelines = (main, upperBody);
             ActiveFaceTimeline = face;
 
@@ -222,7 +224,7 @@ namespace LivePose.Capabilities.Posing
         
         public void UpdatePoseCache(bool announceToHeels = false) {
             if(CursedMode) return;
-            
+            if(!IsReady) return;
             if (ActiveFaceTimeline != 0)
                 FacePoses[ActiveFaceTimeline] = PoseInfo.Clone(FilterFaceBones);
             if (ActiveBodyTimelines != (0, 0))
@@ -241,7 +243,7 @@ namespace LivePose.Capabilities.Posing
         
         private unsafe void UpdateCache() {
 
-            if(!CursedMode) {
+            if(!CursedMode && IsReady) {
                 var chr = (Character*)Character.Address;
                 var currentBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(0);
                 var currentUpperBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(1);

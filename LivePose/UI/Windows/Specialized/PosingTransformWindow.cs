@@ -21,17 +21,19 @@ public class PosingTransformWindow : Window
     private readonly EntityManager _entityManager;
     private readonly PosingService _posingService;
     private readonly IClientState _clientState;
+    private readonly ICondition _condition;
     private readonly PosingTransformEditor _posingTransformEditor = new();
 
     private Matrix4x4? _trackingMatrix;
 
-    public PosingTransformWindow(EntityManager entityManager, PosingService posingService, IClientState clientState) : base($"{LivePose.Name} - TRANSFORM###livepose_transform_window", ImGuiWindowFlags.AlwaysAutoResize)
+    public PosingTransformWindow(EntityManager entityManager, PosingService posingService, IClientState clientState, ICondition conditions) : base($"{LivePose.Name} - TRANSFORM###livepose_transform_window", ImGuiWindowFlags.AlwaysAutoResize)
     {
         Namespace = "livepose_transform_namespace";
 
         _entityManager = entityManager;
         _posingService = posingService;
         _clientState = clientState;
+        _condition = conditions;
 
         SizeConstraints = new WindowSizeConstraints
         {
@@ -48,6 +50,8 @@ public class PosingTransformWindow : Window
         if(!_entityManager.TryGetCapabilityFromSelectedEntity<PosingCapability>(out var posing)) {
             return false;
         }
+
+        if(_condition.AnyUnsafe()) return false;
         
         return posing.GameObject.ObjectIndex < 2;
     }

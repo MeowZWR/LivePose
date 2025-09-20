@@ -1,4 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using LivePose.Capabilities.Core;
 using LivePose.Entities.Actor;
 
@@ -14,4 +16,20 @@ public abstract class ActorCapability(ActorEntity parent) : Capability(parent)
 public abstract class ActorCharacterCapability(ActorEntity parent) : ActorCapability(parent)
 {
     public ICharacter Character => (ICharacter)GameObject;
+    
+    
+    public unsafe Character*  NativeCharacter => (Character*)Character.Address;
+
+    public unsafe bool IsReady {
+        get {
+            var chr = NativeCharacter;
+            if(chr == null) return false;
+            if(chr->DrawObject == null) return false;
+            if(!chr->DrawObject->IsVisible) return false;
+            if(chr->DrawObject->GetObjectType() != ObjectType.CharacterBase) return false;
+            var nativeCharacterBase = (CharacterBase*)chr->DrawObject;
+            if(nativeCharacterBase->GetModelType() != CharacterBase.ModelType.Human) return false;
+            return true;
+        }
+    }
 }
