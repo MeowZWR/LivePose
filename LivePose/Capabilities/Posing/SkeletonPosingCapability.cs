@@ -271,6 +271,7 @@ namespace LivePose.Capabilities.Posing
         }
 
         private bool FilterFaceBones(BonePoseInfoId obj) {
+            if(!IsReady) return false;
             var skeleton = obj.Slot switch {
                 PoseInfoSlot.Character => CharacterSkeleton,
                 PoseInfoSlot.MainHand => MainHandSkeleton,
