@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
@@ -139,7 +140,9 @@ public class HeelsService : BrioIPC {
         if(objectIndex < 2 || objectIndex >= 200) return;
         if(tag != TagName) return;
         LivePose.Log.Debug($"LivePose tag Changed for Object#{objectIndex}");
-        _ipcService.SetPose((ushort)objectIndex, Decompress(value));
+        var decompressedData = Decompress(value);
+        LivePose.Log.Verbose($"Decompressed Tag: {value?.Length ?? 0} -> {decompressedData.Length}");
+        _ipcService.SetPose((ushort)objectIndex, decompressedData);
     }
 
     public override void Dispose() {

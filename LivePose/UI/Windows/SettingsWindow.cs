@@ -180,8 +180,15 @@ public class SettingsWindow : Window
 
     private void DrawPosingGeneralSection()
     {
-        if(ImGui.CollapsingHeader("通用设置", ImGuiTreeNodeFlags.DefaultOpen))
-        {
+        if(ImGui.CollapsingHeader("通用设置", ImGuiTreeNodeFlags.DefaultOpen)) {
+
+            var curseMode = _configurationService.Configuration.Posing.CursedMode;
+            if(ImGui.Checkbox("诅咒模式", ref curseMode)) {
+                _configurationService.Configuration.Posing.CursedMode = curseMode;
+                _configurationService.ApplyChange();
+            }
+            
+            
             var undoStackSize = _configurationService.Configuration.Posing.UndoStackSize;
             if(ImGui.DragInt("撤销历史记录", ref undoStackSize, 1, 0, 100))
             {

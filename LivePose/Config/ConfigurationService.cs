@@ -57,7 +57,7 @@ public class ConfigurationService : IDisposable
     {
         if(save)
             Save();
-
+        
         OnConfigurationChanged?.Invoke();
     }
 

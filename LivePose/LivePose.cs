@@ -156,6 +156,7 @@ public class LivePose : IDisposable {
         // Library
         serviceCollection.AddSingleton<FileTypeInfoBase, CMToolPoseFileInfo>();
         serviceCollection.AddSingleton<FileTypeInfoBase, PoseFileInfo>();
+        serviceCollection.AddSingleton<FileTypeInfoBase, LivePoseFileInfo>();
         serviceCollection.AddSingleton<FileService>();
 
         serviceCollection.AddSingleton<SourceBase, GameDataNpcSource>();
@@ -167,6 +168,7 @@ public class LivePose : IDisposable {
 
         // UI
         serviceCollection.AddSingleton<UIManager>();
+        serviceCollection.AddSingleton<DebugWindow>();
         serviceCollection.AddSingleton<SettingsWindow>();
         serviceCollection.AddSingleton<LibraryWindow>();
         serviceCollection.AddSingleton<PosingOverlayWindow>();
@@ -211,5 +213,10 @@ public class LivePose : IDisposable {
         if(!entity.TryGetCapability<PosingCapability>(out var posingCapability)) return;
         manager.SetSelectedEntity(entity);
         posingCapability.OverlayOpen = !posingCapability.OverlayOpen;
+    }
+
+    public void ToggleDebugWindow() {
+        if(!TryGetService<DebugWindow>(out var debugWindow)) return;
+        debugWindow.Toggle();
     }
 }

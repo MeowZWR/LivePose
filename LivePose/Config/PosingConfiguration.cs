@@ -30,5 +30,6 @@ public class PosingConfiguration
     public bool FreezeActorOnPoseImport { get; set; } = false;
 
     public string[]? EnabledBoneCategories;
-
+    
+    public bool CursedMode { get; set; }
 }

@@ -198,7 +198,12 @@ public static partial class ImBrio
         return clicked;
     }
 
-    public static bool ToggelFontIconButton(string id, FontAwesomeIcon icon, Vector2 size, bool isToggled, uint toggledColor = 0, string hoverText = "")
+
+    public static bool ToggelFontIconButton(string id, FontAwesomeIcon icon, Vector2 size, bool isToggled, uint toggledColor = 0, string hoverText = "") {
+        return ToggelFontIconButton(id, icon, size, isToggled, toggledColor, string.IsNullOrWhiteSpace(hoverText) ? null : () => ImGui.SetTooltip(hoverText));
+    }
+    
+    public static bool ToggelFontIconButton(string id, FontAwesomeIcon icon, Vector2 size, bool isToggled, uint toggledColor = 0, Action? hoverAction = null)
     {
         var clicked = false;
 
@@ -221,10 +226,9 @@ public static partial class ImBrio
         if(isToggled)
             ImGui.PopStyleColor();
 
-        if(string.IsNullOrEmpty(hoverText) == false)
-        {
+        if(hoverAction != null) {
             if(ImGui.IsItemHovered())
-                ImGui.SetTooltip(hoverText);
+                hoverAction();
         }
 
         return clicked;

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using LivePose.Core;
 using LivePose.Game.Posing;
@@ -58,26 +59,72 @@ public class BonePoseData {
 }
 
 
+public class LivePoseBoneEntry {
+
+    public LivePoseBoneEntry() { }
+
+    public LivePoseBoneEntry(BonePoseInfoId bonePoseInfoId, List<BonePoseData> stacks) {
+        BonePoseInfoId = bonePoseInfoId;
+        Stacks = stacks;
+    }
+
+    public BonePoseInfoId BonePoseInfoId;
+    public List<BonePoseData> Stacks = [];
+}
+
+public class LivePoseData : List<LivePoseBoneEntry> {
+    
+}
+
+public class LivePoseCacheEntry {
+
+    public LivePoseCacheEntry() {
+        TimelineId = 0;
+        SecondaryTimelineId = 0;
+        Pose = [];
+    }
+
+    public LivePoseCacheEntry(ushort timelineId, ushort secondaryId, LivePoseData pose) {
+        TimelineId = timelineId;
+        SecondaryTimelineId = secondaryId;
+        Pose = pose;
+    }
+
+    public LivePoseCacheEntry(ushort timelineId, LivePoseData pose) {
+        TimelineId = timelineId;
+        SecondaryTimelineId = 0;
+        Pose = pose;
+    }
+    
+    public ushort TimelineId;
+    public ushort SecondaryTimelineId;
+    public LivePoseData Pose;
+}
 
 
-public class LivePoseData {
+public class LivePoseCharacterData {
     // public Dictionary<string, List<BonePoseData>> Pose = [];
 
     public bool ShouldSerializeBodyPoses() => BodyPoses.Count > 0;
     public bool ShouldSerializeFacePoses() => FacePoses.Count > 0;
+    public bool ShouldSerializeCursedPose() => CursedPose != null;
     
-    public Dictionary<(ushort, ushort), Dictionary<BonePoseInfoId, List<BonePoseData>>> BodyPoses = [];
-    public Dictionary<ushort, Dictionary<BonePoseInfoId, List<BonePoseData>>> FacePoses = [];
+    // public Dictionary<uint, Dictionary<BonePoseInfoId, List<BonePoseData>>> BodyPoses = [];
+
+    public List<LivePoseCacheEntry> BodyPoses = [];
+    public List<LivePoseCacheEntry> FacePoses = [];
     public bool Frozen = false;
+    public LivePoseData? CursedPose = null;
 
     public string Serialize() {
         return JsonConvert.SerializeObject(this);
     }
 
-    public static LivePoseData? Deserialize(string json) {
+    public static LivePoseCharacterData? Deserialize(string json) {
         try {
-            return JsonConvert.DeserializeObject<LivePoseData>(json);
-        } catch {
+            return JsonConvert.DeserializeObject<LivePoseCharacterData>(json);
+        } catch (Exception ex) {
+            LivePose.Log.Error(ex, "Error deserializing LivePoseData json.");
             return null;
         }
     }

@@ -32,6 +32,7 @@ public class PosingOverlayToolbarWindow : Window
     private readonly ConfigurationService _configurationService;
     private readonly IClientState _clientState;
     private readonly PosingGraphicalWindow _graphicalWindow;
+    private readonly ICondition _conditions;
     
     private readonly BoneSearchControl _boneSearchControl = new();
 
@@ -40,7 +41,7 @@ public class PosingOverlayToolbarWindow : Window
 
     private const string _boneFilterPopupName = "livepose_bone_filter_popup";
 
-    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow) : base($"{LivePose.Name} 叠加层###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
+    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow, ICondition conditions) : base($"{LivePose.Name} 叠加层###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
     {
         Namespace = "livepose_posing_overlay_toolbar_namespace";
 
@@ -51,6 +52,7 @@ public class PosingOverlayToolbarWindow : Window
         _configurationService = configurationService;
         _clientState = clientState;
         _graphicalWindow = graphicalWindow;
+        _conditions = conditions;
 
         TitleBarButtons =
         [
@@ -97,7 +99,7 @@ public class PosingOverlayToolbarWindow : Window
         
         if(_clientState.LocalPlayer == null) return false;
         if(_clientState.LocalPlayer.StatusFlags.HasFlag(StatusFlags.InCombat)) return false;
-        
+        if(_conditions.AnyUnsafe()) return false;
 
         return base.DrawConditions();
     }
@@ -467,14 +469,14 @@ public class PosingOverlayToolbarWindow : Window
         using(ImRaii.PushFont(UiBuilder.IconFont))
         {
             if(ImGui.Button($"{FontAwesomeIcon.Cog.ToIconString()}###import_options", new Vector2(buttonSize)))
-                ImGui.OpenPopup("import_options_popup_pose_tooblar");
+                ImGui.OpenPopup("import_options_popup_pose_toolbar");
         }
         if(ImGui.IsItemHovered())
             ImGui.SetTooltip("导入选项");
 
         ImGui.PopStyleColor();
 
-        using(var popup = ImRaii.Popup("import_options_popup_pose_tooblar"))
+        using(var popup = ImRaii.Popup("import_options_popup_pose_toolbar"))
         {
             if(popup.Success)
             {

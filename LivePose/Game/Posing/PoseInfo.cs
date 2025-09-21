@@ -256,7 +256,7 @@ public struct BoneIKInfo
 
     public readonly static BoneIKInfo Disabled = new();
 
-    public static bool CanUseJoint(string boneName) => boneName.StartsWith("j_te") || boneName.StartsWith("j_asi_d");
+    public static bool CanUseJoint(string boneName) => !string.IsNullOrEmpty(boneName) && (boneName.StartsWith("j_te") || boneName.StartsWith("j_asi_d"));
 
     public static BoneIKInfo CalculateDefault(string boneName, bool allowJoint = true)
     {

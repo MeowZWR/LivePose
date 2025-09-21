@@ -88,13 +88,14 @@ public class IpcService : IDisposable
     private (int, int) ApiVersion_Impl() => CurrentApiVersion;
 
 
-    private PoseInfo DeserializePose(SkeletonPosingCapability skeletonPosingCapability, Dictionary<BonePoseInfoId, List<BonePoseData>> dict) {
+    public PoseInfo DeserializePose(LivePoseData livePoseData) {
 
         var pose = new PoseInfo();
         
-        foreach(var (b, list) in dict) {
-            var bone = pose.GetPoseInfo(b);
-            foreach(var s in list) {
+        
+        foreach(var boneEntry in livePoseData) {
+            var bone = pose.GetPoseInfo(boneEntry.BonePoseInfoId);
+            foreach(var s in boneEntry.Stacks) {
                 bone.Apply(s.Transform, null, s.Propogate, TransformComponents.All, s.BoneIkInfo);
             }
         }
@@ -103,8 +104,8 @@ public class IpcService : IDisposable
         return pose;
     }
     
-    private Dictionary<BonePoseInfoId, List<BonePoseData>> SerializePose(SkeletonPosingCapability skeletonPosingCapability, PoseInfo pose) {
-        var dict =  new Dictionary<BonePoseInfoId, List<BonePoseData>>();
+    public LivePoseData SerializePose(SkeletonPosingCapability skeletonPosingCapability, PoseInfo pose) {
+        var boneList = new LivePoseData();
         foreach(var b in pose.StackCounts.Keys) {
             var bone = skeletonPosingCapability.GetBone(b, PoseInfoSlot.Character);
             if (bone == null) continue;
@@ -114,6 +115,7 @@ public class IpcService : IDisposable
             
             var list = new List<BonePoseData>();
             foreach(var p in bonePose.Stacks) {
+                if (p.Transform.IsApproximatelySame(Transform.Identity)) continue;
                 
                 var bonePoseData = new BonePoseData {
                     Transform = p.Transform,
@@ -146,10 +148,10 @@ public class IpcService : IDisposable
                 list.Add(bonePoseData);
             }
 
-            dict.Add(bonePose.Id, list);
+            boneList.Add(new LivePoseBoneEntry(bonePose.Id, list));
         }
 
-        return dict;
+        return boneList;
     }
     
     public string GetPose(ushort objectIndex) {
@@ -158,18 +160,27 @@ public class IpcService : IDisposable
         if(obj == null || !_entityManager.TryGetEntity(new EntityId(obj), out var entity) || entity is not ActorEntity actorEntity) return string.Empty;
         if (!actorEntity.TryGetCapability<ActionTimelineCapability>(out var timelineCapability)) return string.Empty;
         if (!actorEntity.TryGetCapability<SkeletonPosingCapability>(out var skeletonPosingCapability)) return string.Empty;
-        
-        var data = new LivePoseData();
-        foreach(var (key, p) in skeletonPosingCapability.BodyPoses) {
-            var pose = SerializePose(skeletonPosingCapability, p);
-            if(pose.Count > 0)
-                data.BodyPoses[key] = pose;
+
+        if(objectIndex == 0) {
+            skeletonPosingCapability.UpdatePoseCache();
         }
+
+        var data = new LivePoseCharacterData();
+        if(_configurationService.Configuration.Posing.CursedMode) {
+            data.CursedPose = SerializePose(skeletonPosingCapability, skeletonPosingCapability.PoseInfo);
+        } else {
+            foreach(var (key, p) in skeletonPosingCapability.BodyPoses) {
+                var pose = SerializePose(skeletonPosingCapability, p);
+                if(pose.Count > 0) {
+                    data.BodyPoses.Add(new LivePoseCacheEntry(key.Item1, key.Item2, pose));
+                }
+            }
         
-        foreach(var (key, p) in skeletonPosingCapability.FacePoses) {
-            var pose = SerializePose(skeletonPosingCapability, p);
-            if(pose.Count > 0)
-                data.FacePoses[key] = pose;
+            foreach(var (key, p) in skeletonPosingCapability.FacePoses) {
+                var pose = SerializePose(skeletonPosingCapability, p);
+                if(pose.Count > 0)
+                    data.FacePoses.Add(new LivePoseCacheEntry(key, pose));
+            }
         }
         
         data.Frozen = timelineCapability.SpeedMultiplierOverride == 0;
@@ -206,25 +217,31 @@ public class IpcService : IDisposable
             return;
         }
 
-        var livePoseData = LivePoseData.Deserialize(data);
+        skeletonPosingCapability.IpcDataJson = data;
+        var livePoseData = LivePoseCharacterData.Deserialize(data);
         
         _framework.RunOnTick(() => {
             skeletonPosingCapability.ResetPose();
             if(livePoseData == null) {
-                LivePose.Log.Warning("Pose is null");
                 return;
             }
+            
             LivePose.Log.Verbose($"Applying Pose to GameObject#{obj.ObjectIndex} => {data}");
+            skeletonPosingCapability.CursedMode = livePoseData.CursedPose != null;
+            if(livePoseData.CursedPose != null) {
+                skeletonPosingCapability.PoseInfo = DeserializePose(livePoseData.CursedPose);
+            } else {
+                foreach(var pose in livePoseData.BodyPoses) {
+                    skeletonPosingCapability.BodyPoses[(pose.TimelineId, pose.SecondaryTimelineId)] = DeserializePose(pose.Pose);
+                }
             
-            foreach(var (key, bodyDict) in livePoseData.BodyPoses) {
-                skeletonPosingCapability.BodyPoses[key] = DeserializePose(skeletonPosingCapability, bodyDict);
+                foreach(var pose in livePoseData.FacePoses) {
+                    skeletonPosingCapability.FacePoses[pose.TimelineId] = DeserializePose(pose.Pose);
+                }
+                
+                skeletonPosingCapability.ApplyTimelinePose();
             }
             
-            foreach(var (key, faceDict) in livePoseData.FacePoses) {
-                skeletonPosingCapability.FacePoses[key] = DeserializePose(skeletonPosingCapability, faceDict);
-            }
-
-            skeletonPosingCapability.ApplyTimelinePose();
             if(livePoseData.Frozen) {
                 timelineCapability.SetOverallSpeedOverride(0f);
             } else {

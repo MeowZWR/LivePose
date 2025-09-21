@@ -27,6 +27,7 @@ public class UIManager : IDisposable
     private readonly PosingOverlayToolbarWindow _overlayToolbarWindow;
     private readonly PosingTransformWindow _overlayTransformWindow;
     private readonly PosingGraphicalWindow _graphicalWindow;
+    private readonly DebugWindow _debugWindow;
 
     private readonly ITextureProvider _textureProvider;
     private readonly IToastGui _toastGui;
@@ -60,7 +61,8 @@ public class UIManager : IDisposable
             PosingOverlayWindow overlayWindow,
             PosingOverlayToolbarWindow overlayToolbarWindow,
             PosingTransformWindow overlayTransformWindow,
-            PosingGraphicalWindow graphicalWindow
+            PosingGraphicalWindow graphicalWindow,
+            DebugWindow debugWindow
         )
     {
         Instance = this;
@@ -77,6 +79,7 @@ public class UIManager : IDisposable
         _overlayToolbarWindow = overlayToolbarWindow;
         _overlayTransformWindow = overlayTransformWindow;
         _graphicalWindow = graphicalWindow;
+        _debugWindow = debugWindow;
 
         _windowSystem = new(LivePose.Name);
         
@@ -86,12 +89,18 @@ public class UIManager : IDisposable
         _windowSystem.AddWindow(_overlayToolbarWindow);
         _windowSystem.AddWindow(_overlayTransformWindow);
         _windowSystem.AddWindow(_graphicalWindow);
+        _windowSystem.AddWindow(_debugWindow);
 
         _pluginInterface.UiBuilder.Draw += DrawUI;
 
         if(LivePose.IsPlugin) {
             _pluginInterface.UiBuilder.OpenConfigUi += ShowSettingsWindow;
         }
+        
+#if DEBUG
+        _debugWindow.IsOpen = true;
+#endif
+
     }
 
     public void ToggleGraphicalPosingWindow()
