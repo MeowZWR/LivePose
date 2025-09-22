@@ -274,8 +274,6 @@ namespace LivePose.Capabilities.Posing
             if(!IsReady) return false;
             var skeleton = obj.Slot switch {
                 PoseInfoSlot.Character => CharacterSkeleton,
-                PoseInfoSlot.MainHand => MainHandSkeleton,
-                PoseInfoSlot.OffHand => OffHandSkeleton,
                 _ => null
             };
 
