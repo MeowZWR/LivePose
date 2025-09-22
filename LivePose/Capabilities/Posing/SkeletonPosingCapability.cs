@@ -227,8 +227,7 @@ namespace LivePose.Capabilities.Posing
 
             _framework.RunOnFrameworkThread(() => {
                 if(!IsReady) return;
-                if(ActiveFaceTimeline != 0)
-                    FacePoses[ActiveFaceTimeline] = PoseInfo.Clone(FilterFaceBones);
+                FacePoses[ActiveFaceTimeline] = PoseInfo.Clone(FilterFaceBones);
                 if(ActiveBodyTimelines != (0, 0))
                     BodyPoses[ActiveBodyTimelines] = PoseInfo.Clone(FilterNonFaceBones);
 
