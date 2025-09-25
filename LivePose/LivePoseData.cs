@@ -114,6 +114,9 @@ public class LivePoseCharacterData {
     public List<LivePoseCacheEntry> BodyPoses = [];
     public List<LivePoseCacheEntry> FacePoses = [];
     public bool Frozen = false;
+    public List<AnimationState> AnimationState = [];
+    
+    
     public LivePoseData? CursedPose = null;
 
     public string Serialize() {
@@ -130,3 +133,5 @@ public class LivePoseCharacterData {
     }
     
 }
+
+public record AnimationState(int SkeletonIndex, int AnimationControlIndex, float Time);

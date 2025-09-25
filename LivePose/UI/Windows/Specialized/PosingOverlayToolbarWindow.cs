@@ -17,9 +17,11 @@ using LivePose.UI.Theming;
 using OneOf.Types;
 using System.Numerics;
 using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Interface.Colors;
 using LivePose.Capabilities.Actor;
 using LivePose.Files;
 using LivePose.IPC;
+using LivePose.Resources;
 
 namespace LivePose.UI.Windows.Specialized;
 
@@ -33,6 +35,7 @@ public class PosingOverlayToolbarWindow : Window
     private readonly IClientState _clientState;
     private readonly PosingGraphicalWindow _graphicalWindow;
     private readonly ICondition _conditions;
+    private readonly TimelineIdentification _timelineIdentification;
     
     private readonly BoneSearchControl _boneSearchControl = new();
 
@@ -41,7 +44,7 @@ public class PosingOverlayToolbarWindow : Window
 
     private const string _boneFilterPopupName = "livepose_bone_filter_popup";
 
-    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow, ICondition conditions) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
+    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow, ICondition conditions, TimelineIdentification timelineIdentification) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
     {
         Namespace = "livepose_posing_overlay_toolbar_namespace";
 
@@ -53,6 +56,7 @@ public class PosingOverlayToolbarWindow : Window
         _clientState = clientState;
         _graphicalWindow = graphicalWindow;
         _conditions = conditions;
+        _timelineIdentification = timelineIdentification;
 
         TitleBarButtons =
         [
@@ -362,7 +366,12 @@ public class PosingOverlayToolbarWindow : Window
         }
         
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Reset Inverse Kinematics");
+            using(ImRaii.Tooltip()) {
+                ImGui.Text("Set Inverse Kinematics");
+                ImGui.Separator();
+                ImGui.TextDisabled("Disables Inverse Kinematics on all bones while\nkeeping them at their current position.");
+            }
+           
 
         ImGui.SameLine();
         using(ImRaii.PushFont(UiBuilder.IconFont))
@@ -386,7 +395,7 @@ public class PosingOverlayToolbarWindow : Window
                     } else {
                         timelineCapability.SetOverallSpeedOverride(0);
                     }
-
+                    
                     if(timelineCapability.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
                         service.SetPlayerPoseTag();
                     }
@@ -405,7 +414,7 @@ public class PosingOverlayToolbarWindow : Window
         {
             using(ImRaii.Disabled(!posing.CanUndo))
             {
-                if(ImGui.Button($"{FontAwesomeIcon.Backward.ToIconString()}###undo_pose", new Vector2(buttonSize)))
+                if(ImGui.Button($"{FontAwesomeIcon.Backward.ToIconString()}###undo_pose", new Vector2(buttonOperationSize)))
                 {
                     posing.Undo();
                 }
@@ -420,7 +429,7 @@ public class PosingOverlayToolbarWindow : Window
         {
             using(ImRaii.Disabled(!posing.CanRedo))
             {
-                if(ImGui.Button($"{FontAwesomeIcon.Forward.ToIconString()}###redo_pose", new Vector2(buttonSize)))
+                if(ImGui.Button($"{FontAwesomeIcon.Forward.ToIconString()}###redo_pose", new Vector2(buttonOperationSize)))
                 {
                     posing.Redo();
                 }
@@ -433,17 +442,146 @@ public class PosingOverlayToolbarWindow : Window
 
         using(ImRaii.PushFont(UiBuilder.IconFont))
         {
-            using(ImRaii.Disabled(!posing.HasOverride))
+            using(ImRaii.Disabled(!posing.HasOverride(posing.SkeletonPosing.FilterNonFaceBones)))
             {
-                if(ImGui.Button($"{FontAwesomeIcon.Undo.ToIconString()}###reset_pose", new Vector2(buttonSize)))
-                    posing.Reset(true, false);
+                if(ImGui.Button($"{FontAwesomeIcon.Undo.ToIconString()}###reset_body_pose", new Vector2(buttonOperationSize))) {
+                    posing.Snapshot(false, reconcile: false);
+                    posing.SkeletonPosing.PoseInfo.Clear(posing.SkeletonPosing.FilterNonFaceBones);
+                    if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
+                        heelsService.SetPlayerPoseTag();
+                    }
+                }
+                
+                ImGui.GetWindowDrawList().AddText(ImGui.GetItemRectMin() + ImGui.GetItemRectSize() / 2, ImGui.GetColorU32(ImGuiCol.Text), FontAwesomeIcon.ChildReaching.ToIconString());
+                
             }
         }
+        
         if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("Reset Pose");
+            using(ImRaii.Tooltip()) {
+                ImGui.Text("Reset Body Pose");
+                ImGui.Separator();
+                ImGui.TextDisabled($"Will reset pose for:\n\t{_timelineIdentification.GetBodyPoseName(posing.SkeletonPosing.ActiveBodyTimelines)}");
+            }
+            
+        ImGui.SameLine();
 
+        using(ImRaii.PushFont(UiBuilder.IconFont))
+        {
+            using(ImRaii.Disabled(!posing.HasOverride(posing.SkeletonPosing.FilterFaceBones)))
+            {
+                if(ImGui.Button($"{FontAwesomeIcon.Undo.ToIconString()}###reset_face_pose", new Vector2(buttonOperationSize))) {
+                    posing.Snapshot(false, reconcile: false);
+                    posing.SkeletonPosing.PoseInfo.Clear(posing.SkeletonPosing.FilterFaceBones);
+                    if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
+                        heelsService.SetPlayerPoseTag();
+                    }
+                }
+                
+                ImGui.GetWindowDrawList().AddText(ImGui.GetItemRectMin() + ImGui.GetItemRectSize() / 2, ImGui.GetColorU32(ImGuiCol.Text), FontAwesomeIcon.Smile.ToIconString());
+                
+            }
+        }
+        
+        if(ImGui.IsItemHovered())
+            using(ImRaii.Tooltip()) {
+                ImGui.Text("Reset Face Pose");
+                ImGui.Separator();
+                ImGui.TextDisabled($"Will reset pose for:\n\t{_timelineIdentification.GetExpressionName(posing.SkeletonPosing.ActiveFaceTimeline)}");
+            }
+        
+        
+        if(!_configurationService.Configuration.Posing.CursedMode) {
+            ImGui.Separator();
+            
+            using(ImRaii.PushFont(UiBuilder.IconFont))
+            {
+                if(ImGui.Button($"{FontAwesomeIcon.Save.ToIconString()}###save_character_config", new Vector2(buttonSize))) {
+                    posing.SkeletonPosing.SaveCharacterConfiguration();
+                    if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                        service.SetPlayerPoseTag();
+                    }
+                }
+                    
+            }
+            if(ImGui.IsItemHovered())
+                using(ImRaii.Tooltip()) {
+                    ImGui.Text("Save Character State");
+                    ImGui.Separator();
+                    var bCount = posing.SkeletonPosing.BodyPoses.Count;
+                    var fCount = posing.SkeletonPosing.FacePoses.Count;
+                    ImGui.Text($"Will save {bCount} body {(bCount > 1 ? "poses" : "pose")}\nand {fCount} face {(fCount > 1 ? "poses" : "pose")}.");
+                    ImGui.Separator();
+                    ImGui.TextDisabled("Unsaved character state will be lost when changing zones or logging out.\nSaved character state will be reloaded automatically.");
+                }
+            
+            ImGui.SameLine();
+            
+            using (ImRaii.Disabled(!ImGui.GetIO().KeyShift))
+            using(ImRaii.PushFont(UiBuilder.IconFont))
+            {
+                if(ImGui.Button($"{FontAwesomeIcon.IdBadge.ToIconString()}###load_character_config", new Vector2(buttonSize))) {
+                    posing.SkeletonPosing.LoadCharacterConfiguration();
+                    if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                        service.SetPlayerPoseTag();
+                    }
+                }
+            }
+            if(ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                using(ImRaii.Tooltip()) {
+                    ImGui.Text("Reset Character to Saved State");
+                    ImGui.Separator();
+                    var bCount = posing.SkeletonPosing.BodyPoses.Count;
+                    var fCount = posing.SkeletonPosing.FacePoses.Count;
+                    ImGui.Text($"Will override {bCount} body {(bCount > 1 ? "poses" : "pose")}\nand {fCount} face {(fCount > 1 ? "poses" : "pose")}.");
+                    if(!ImGui.GetIO().KeyShift) {
+                        ImGui.Separator();
+                        ImGui.TextColored(ImGuiColors.ParsedOrange, "Hold SHIFT to confirm.");
+                    }
+                }
+            
+            ImGui.SameLine();
+            
+            using(ImRaii.Disabled(!(ImGui.GetIO().KeyShift && ImGui.GetIO().KeyAlt)))
+            using(ImRaii.PushFont(UiBuilder.IconFont))
+            {
+
+
+                if(ImGui.Button($"{FontAwesomeIcon.UndoAlt.ToIconString()}###clear_character_config", new Vector2(buttonSize))) {
+                    posing.SkeletonPosing.BodyPoses.Clear();
+                    posing.SkeletonPosing.FacePoses.Clear();
+                    posing.SkeletonPosing.PoseInfo = new PoseInfo();
+                    if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                        service.SetPlayerPoseTag();
+                    }
+                }
+                
+                
+                ImGui.GetWindowDrawList().AddText(ImGui.GetItemRectMin() + ImGui.GetItemRectSize() / 2, ImGui.GetColorU32((ImGui.GetIO().KeyShift && ImGui.GetIO().KeyAlt) ? ImGuiCol.Text : ImGuiCol.TextDisabled), FontAwesomeIcon.PersonHalfDress.ToIconString());
+            }
+            if(ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                using(ImRaii.Tooltip()) {
+                    ImGui.Text("Clear All Poses");
+                    ImGui.Separator();
+                    var bCount = posing.SkeletonPosing.BodyPoses.Count;
+                    var fCount = posing.SkeletonPosing.FacePoses.Count;
+                    ImGui.Text($"Will remove {bCount} body {(bCount > 1 ? "poses" : "pose")}\nand {fCount} face {(fCount > 1 ? "poses" : "pose")}.");
+                    if(!(ImGui.GetIO().KeyShift && ImGui.GetIO().KeyAlt)) {
+                        ImGui.Separator();
+                        ImGui.TextColored(ImGuiColors.ParsedOrange, "Hold ALT + SHIFT to confirm.");
+                    }
+
+                }
+
+        }
+        
+        
         ImGui.Separator();
 
+
+        ImGui.Dummy(new Vector2(buttonSize / 2));
+        ImGui.SameLine();
+        
         using(ImRaii.PushFont(UiBuilder.IconFont))
         {
             if(ImGui.Button($"{FontAwesomeIcon.FileImport.ToIconString()}###import_pose", new Vector2(buttonSize)))
@@ -464,15 +602,19 @@ public class PosingOverlayToolbarWindow : Window
         if(ImGui.IsItemHovered())
             ImGui.SetTooltip("Export Pose");
 
+        
+        /*
         ImGui.SameLine();
 
+        using (ImRaii.Disabled())
         using(ImRaii.PushFont(UiBuilder.IconFont))
         {
             if(ImGui.Button($"{FontAwesomeIcon.Cog.ToIconString()}###import_options", new Vector2(buttonSize)))
                 ImGui.OpenPopup("import_options_popup_pose_toolbar");
         }
-        if(ImGui.IsItemHovered())
+        if(ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("Import Options");
+        */
 
         ImGui.PopStyleColor();
 

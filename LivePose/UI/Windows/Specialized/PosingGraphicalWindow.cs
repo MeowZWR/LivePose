@@ -254,7 +254,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         ImGui.SameLine();
 
 
-        using(ImRaii.Disabled(!posing.HasOverride))
+        using(ImRaii.Disabled(!posing.HasOverride()))
         {
             if(ImBrio.FontIconButton(FontAwesomeIcon.Undo, new(buttonWidth, 0)))
                 posing.Reset(true, false);
@@ -336,6 +336,7 @@ public class PosingGraphicalWindow : Window, IDisposable
 
         ImGui.SameLine();
 
+        /*
         if(ImBrio.FontIconButton(FontAwesomeIcon.Cog, new(settingsSize, 0)))
             ImGui.OpenPopup("import_options_popup_posing_graphical");
 
@@ -343,7 +344,7 @@ public class PosingGraphicalWindow : Window, IDisposable
 
         if(ImGui.IsItemHovered())
             ImGui.SetTooltip("Import Options");
-
+        */
         using(var popup = ImRaii.Popup("import_options_popup_posing_graphical"))
         {
             if(popup.Success)

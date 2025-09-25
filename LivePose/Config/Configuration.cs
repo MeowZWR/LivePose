@@ -1,4 +1,5 @@
-﻿using Dalamud.Configuration;
+﻿using System.Collections.Generic;
+using Dalamud.Configuration;
 
 namespace LivePose.Config;
 
@@ -28,6 +29,8 @@ public class Configuration : IPluginConfiguration
 
     // Developer
     public bool ForceDebug { get; set; } = false;
+    
+    
 }
 
 public enum OpenBrioBehavior

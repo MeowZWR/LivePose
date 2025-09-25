@@ -73,14 +73,6 @@ public static class PosingEditorCommon
                 else
                     options.TransformComponents &= ~TransformComponents.Scale;
             }
-
-            ImGui.Separator();
-
-            selected = options.ApplyModelTransform;
-            if(ImGui.Checkbox("Model Transform", ref selected))
-            {
-                options.ApplyModelTransform = selected;
-            }
         }
     }
 

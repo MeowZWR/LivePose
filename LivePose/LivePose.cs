@@ -33,11 +33,6 @@ public class LivePose : IDisposable {
     private static ServiceProvider? _services = null;
     public static IPluginLog Log { get; private set; } = null!;
     public static IFramework Framework { get; private set; } = null!;
-    
-    internal LivePose(LivePosePlugin plugin, IDalamudPluginInterface pluginInterface) {
-        IsPlugin = true;
-        Initialize(pluginInterface);
-    }
 
     public LivePose(IDalamudPluginInterface pluginInterface, string name = "LivePose") {
         Name = name;
@@ -128,6 +123,7 @@ public class LivePose : IDisposable {
         serviceCollection.AddSingleton<ResourceProvider>();
         serviceCollection.AddSingleton<GameDataProvider>();
         serviceCollection.AddSingleton<HistoryService>();
+        serviceCollection.AddSingleton<TimelineIdentification>();
 
         // IPC
         serviceCollection.AddSingleton<IpcService>();

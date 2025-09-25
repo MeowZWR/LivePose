@@ -29,16 +29,13 @@ public class PosingCapability : ActorCharacterCapability
 
 
     public bool IsEntitySelected;
-    public bool HasOverride
-    {
-        get
-        {
-            if(Entity.TryGetCapability<SkeletonPosingCapability>(out var skeletonPosing))
-                if(skeletonPosing.PoseInfo.IsOverridden)
-                    return true;
+    
+    public bool HasOverride(Predicate<BonePoseInfoId>? predicate = null) {
+        if(Entity.TryGetCapability<SkeletonPosingCapability>(out var skeletonPosing))
+            if(skeletonPosing.PoseInfo.IsOverridden(predicate))
+                return true;
 
-            return false;
-        }
+        return false;
     }
 
     public bool CanUndo => _undoStack.Count is not 0 and not 1 || _groupedUndoService.CanUndo;
@@ -200,16 +197,9 @@ public class PosingCapability : ActorCharacterCapability
 
         if(asScene == false)
         {
-            applyModelTransform |= options.ApplyModelTransform;
-
             if(transformComponents.HasValue)
             {
                 options.TransformComponents = transformComponents.Value;
-            }
-
-            if(applyModelTransformOverride.HasValue)
-            {
-                applyModelTransform = applyModelTransformOverride.Value;
             }
         }
 
@@ -311,7 +301,7 @@ public class PosingCapability : ActorCharacterCapability
             _redoStack.Clear();
 
         if(generateSnapshot)
-            Snapshot(reset);
+            Snapshot(reset, reconcile: false);
     }
 
     private void Reconcile(bool reset = true, bool generateSnapshot = true)

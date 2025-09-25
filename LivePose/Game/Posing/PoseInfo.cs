@@ -5,6 +5,7 @@ using OneOf;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace LivePose.Game.Posing;
 
@@ -20,7 +21,13 @@ public class PoseInfo
         return _poses[id] = new BonePoseInfo(id, this);
     }
 
-    public bool IsOverridden => _poses.Any(x => x.Value.HasStacks);
+    // public bool IsOverridden => _poses.Any(x => x.Value.HasStacks);
+
+    public bool IsOverridden(Predicate<BonePoseInfoId>? predicate = null) {
+        return _poses.Any(p => (predicate == null ||  predicate(p.Key)) && p.Value.HasStacks);
+    }
+    
+    
 
     public bool HasIKStacks => _poses.Any(x => x.Value.Stacks.Any(s => s.IKInfo.Enabled));
 
@@ -90,8 +97,10 @@ public class BonePoseInfo(BonePoseInfoId id, PoseInfo parent)
 
     public bool HasStacks => _stacks.Count != 0;
 
-    public Transform? Apply(Transform transform, Transform? original = null, TransformComponents? propagation = null, TransformComponents applyTo = TransformComponents.All, BoneIKInfo? ikInfo = null, PoseMirrorMode? mirrorMode = null, bool forceNewStack = false)
+    public Transform? Apply(Transform transform, Transform? original = null, TransformComponents? propagation = null, TransformComponents applyTo = TransformComponents.All, BoneIKInfo? ikInfo = null, PoseMirrorMode? mirrorMode = null, bool forceNewStack = false, [CallerFilePath] string callerFilePath = "", [CallerMemberName] string callerMemberName = "", [CallerLineNumber] int callerLineNumber = 0)
     {
+        LivePose.Log.Debug($"Apply: {callerMemberName} @ {callerFilePath}:{callerLineNumber}");
+        
         
         var prop = propagation ?? DefaultPropagation;
         ikInfo ??= DefaultIK;
