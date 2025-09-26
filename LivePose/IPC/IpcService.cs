@@ -240,6 +240,8 @@ public class IpcService : IDisposable
             if(livePoseData.CursedPose != null) {
                 skeletonPosingCapability.PoseInfo = DeserializePose(livePoseData.CursedPose);
             } else {
+                skeletonPosingCapability.BodyPoses.Clear();
+                skeletonPosingCapability.FacePoses.Clear();
                 foreach(var pose in livePoseData.BodyPoses) {
                     skeletonPosingCapability.BodyPoses[(pose.TimelineId, pose.SecondaryTimelineId)] = DeserializePose(pose.Pose);
                 }
