@@ -46,12 +46,21 @@ public class TimelineIdentification {
         basePoses.TryAdd(8066, "Parasol Idle Pose #3");
         basePoses.TryAdd(8068, "Parasol Idle Pose #4");
         
+        // Walking
+        basePoses.TryAdd(13, "Walking Forward");
+        basePoses.TryAdd(14, "Walking Left");
+        basePoses.TryAdd(15, "Walking Right");
+        basePoses.TryAdd(16, "Walking Backward");
+        
         
         facialExpressions.TryAdd(0, "No Expression");
         foreach(var emote in dataManager.GetExcelSheet<Emote>()) {
             if(emote.EmoteCategory.RowId == 3) {
                 facialExpressions.TryAdd(emote.ActionTimeline[0].RowId, emote.Name.ExtractText());
+                continue;
             }
+            
+            basePoses.TryAdd(emote.ActionTimeline[0].RowId, emote.Name.ExtractText());
         }
     }
     
