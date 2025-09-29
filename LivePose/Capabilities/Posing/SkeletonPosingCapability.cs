@@ -287,20 +287,24 @@ namespace LivePose.Capabilities.Posing
             CharacterIsIVCS = CharacterSkeleton?.GetFirstVisibleBone("iv_ko_c_l") != null;
         }
 
-        public bool FilterFaceBones(BonePoseInfoId obj) {
-            if(!IsReady) return false;
+        
+        private readonly Dictionary<BonePoseInfoId, bool> isFaceBoneMap = new();
+        private bool IsFaceBone(BonePoseInfoId obj) {
+            if(obj.Slot != PoseInfoSlot.Character) return false;
+            if(isFaceBoneMap.TryGetValue(obj, out var val)) return val;
             var skeleton = obj.Slot switch {
                 PoseInfoSlot.Character => CharacterSkeleton,
                 _ => null
             };
 
             var bone = skeleton?.GetFirstVisibleBone(obj.BoneName);
-            if(bone == null) return false;
-
-            return bone.IsFaceBone;
+            isFaceBoneMap.TryAdd(obj, bone?.IsFaceBone ?? false);
+            return bone?.IsFaceBone ?? false;
         }
+        
+        public bool FilterFaceBones(BonePoseInfoId obj) => IsFaceBone(obj);
 
-        public bool FilterNonFaceBones(BonePoseInfoId obj) => !FilterFaceBones(obj);
+        public bool FilterNonFaceBones(BonePoseInfoId obj) => !IsFaceBone(obj);
 
         private void OnSkeletonUpdateStart()
         {
