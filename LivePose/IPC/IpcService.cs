@@ -184,7 +184,8 @@ public class IpcService : IDisposable
                     data.FacePoses.Add(new LivePoseCacheEntry(key, pose));
             }
         }
-        
+
+        data.AnimationSpeedMultiplier = timelineCapability.SpeedMultiplierOverride;
         data.Frozen = timelineCapability.SpeedMultiplierOverride == 0;
 
         if(data.Frozen) {
@@ -192,7 +193,6 @@ public class IpcService : IDisposable
                 data.AnimationState = GetAnimationState(timelineCapability.NativeCharacter);
             }
         }
-        
         
         return data.Serialize();
     }
@@ -259,7 +259,11 @@ public class IpcService : IDisposable
                     SetAnimationState(timelineCapability.NativeCharacter, livePoseData.AnimationState);
                 }
             } else {
-                timelineCapability.ResetOverallSpeedOverride();
+                if(livePoseData.AnimationSpeedMultiplier.HasValue && !livePoseData.AnimationSpeedMultiplier.Value.IsApproximatelySame(1)) {
+                    timelineCapability.SetOverallSpeedOverride(livePoseData.AnimationSpeedMultiplier.Value);
+                } else {
+                    timelineCapability.ResetOverallSpeedOverride();
+                }
             }
             
         }, delayTicks: 1);

@@ -6,6 +6,7 @@ using LivePose.Entities.Actor;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Numerics;
+using LivePose.Core;
 
 namespace LivePose.Capabilities.Actor;
 
@@ -16,17 +17,26 @@ public class ActionTimelineCapability(IFramework framework, ActorEntity parent) 
 
     public float? SpeedMultiplierOverride {
         get {
+            if(field == null) return null;
+            
             if(SpeedMultiplierPosition == null || Vector3.DistanceSquared(SpeedMultiplierPosition.Value, Character.Position) > 0.01f) {
-                field = null;
+                ResetOverallSpeedOverride();
+                return null;
             }
 
-            return field;
+            return field.Value.IsApproximatelySame(1) ? null : field;
         }
 
         private set;
     }
 
     public unsafe void SetOverallSpeedOverride(float speed) {
+        if(speed.IsApproximatelySame(1)) {
+            ResetOverallSpeedOverride();
+            return;
+        }
+
+        speed = Math.Clamp(speed, -2, 2);
         SpeedMultiplierPosition = Character.Position;
         SpeedMultiplierOverride = speed;
         Character.Native()->Timeline.OverallSpeed = speed;

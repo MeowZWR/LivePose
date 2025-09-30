@@ -94,4 +94,8 @@ public static class NumericsExtensions
     {
         return Quaternion.Dot(me, other) >= 1 - tolerance;
     }
+
+    public static bool IsApproximatelySame(this float me, float other, float tolerance = 0.000001f) {
+        return Math.Abs(me - other) <= tolerance;
+    }
 }

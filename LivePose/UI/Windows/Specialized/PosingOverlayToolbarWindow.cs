@@ -18,6 +18,7 @@ using OneOf.Types;
 using System.Numerics;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility;
 using LivePose.Capabilities.Actor;
 using LivePose.Files;
 using LivePose.IPC;
@@ -387,24 +388,15 @@ public class PosingOverlayToolbarWindow : Window
 
 
 
-            using(ImRaii.PushColor(ImGuiCol.Text, timelineCapability.SpeedMultiplierOverride == 0 ? UIConstants.ToggleButtonActive : UIConstants.ToggleButtonInactive)) 
+            using(ImRaii.PushColor(ImGuiCol.Text, timelineCapability.SpeedMultiplierOverride != null ? UIConstants.ToggleButtonActive : UIConstants.ToggleButtonInactive)) 
             using(ImRaii.PushFont(UiBuilder.IconFont)) {
-                if(ImGui.Button($"{FontAwesomeIcon.Snowflake.ToIconString()}###freeze_toggle", new Vector2(buttonOperationSize))) {
-                    if(timelineCapability.SpeedMultiplierOverride == 0) {
-                        timelineCapability.ResetOverallSpeedOverride();
-                    } else {
-                        timelineCapability.SetOverallSpeedOverride(0);
-                    }
-                    
-                    if(timelineCapability.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
-                        service.SetPlayerPoseTag();
-                    }
+                if(ImGui.Button($"{FontAwesomeIcon.TachometerAlt.ToIconString()}###animation_speed_button", new Vector2(buttonOperationSize))) {
+                    ImGui.OpenPopup("animation_speed_editor");
                 }
             }
-            
 
             if(ImGui.IsItemHovered())
-                ImGui.SetTooltip($"{(timelineCapability.SpeedMultiplierOverride == 0 ? "Un-" : "")}Freeze Character");
+                ImGui.SetTooltip($"Animation Speed Control");
 
         }
 
@@ -642,6 +634,40 @@ public class PosingOverlayToolbarWindow : Window
                 {
                     var info = posing.SkeletonPosing.GetBonePose(id);
                     BoneIKEditor.Draw(info, posing);
+                }
+            }
+        }
+
+        using(var popup = ImRaii.Popup("animation_speed_editor")) {
+            if(popup.Success && timelineCapability != null) {
+                if(timelineCapability.SpeedMultiplierOverride is null) {
+                    if(ImBrio.Button("Freeze", FontAwesomeIcon.Snowflake, new Vector2(250, 24) * ImGuiHelpers.GlobalScale)) {
+                        timelineCapability.SetOverallSpeedOverride(0);
+                        if(timelineCapability.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                            service.SetPlayerPoseTag();
+                        }
+                    }
+                } else {
+                    if(ImBrio.Button("Reset", FontAwesomeIcon.Undo, new Vector2(250, 24) * ImGuiHelpers.GlobalScale)) {
+                        timelineCapability.ResetOverallSpeedOverride();
+                    
+                        if(timelineCapability.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                            service.SetPlayerPoseTag();
+                        }
+                    }
+                }
+
+                var v = (int) MathF.Round((timelineCapability.SpeedMultiplierOverride ?? 1f) * 100);
+                ImGui.SetNextItemWidth(ImGui.GetItemRectSize().X);
+                if(ImGui.SliderInt("##speed", ref v, -200, 200, "%d%%")) {
+                    if(v == 100) {
+                        timelineCapability.ResetOverallSpeedOverride();
+                    } else {
+                        timelineCapability.SetOverallSpeedOverride(v / 100f);
+                    }
+                    if(timelineCapability.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                        service.SetPlayerPoseTag();
+                    }
                 }
             }
         }
