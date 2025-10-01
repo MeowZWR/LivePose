@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
+using Newtonsoft.Json.Converters;
 
 namespace LivePose.Game.Posing;
 
@@ -31,15 +33,15 @@ public class PoseInfo
 
     public bool HasIKStacks => _poses.Any(x => x.Value.Stacks.Any(s => s.IKInfo.Enabled));
 
-    public Dictionary<string, int> StackCounts
+    public Dictionary<BonePoseInfoId, int> StackCounts
     {
         get
         {
-            Dictionary<string, int> counts = [];
+            Dictionary<BonePoseInfoId, int> counts = [];
             foreach(var pose in _poses)
             {
                 if(pose.Value.Stacks.Count > 0)
-                    counts[pose.Key.BoneName] = pose.Value.Stacks.Count;
+                    counts[pose.Key] = pose.Value.Stacks.Count;
             }
             return counts;
         }

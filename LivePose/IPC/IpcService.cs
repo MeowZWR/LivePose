@@ -109,10 +109,10 @@ public class IpcService : IDisposable
     public LivePoseData SerializePose(SkeletonPosingCapability skeletonPosingCapability, PoseInfo pose) {
         var boneList = new LivePoseData();
         foreach(var b in pose.StackCounts.Keys) {
-            var bone = skeletonPosingCapability.GetBone(b, PoseInfoSlot.Character);
+            var bone = skeletonPosingCapability.GetBone(b);
             if (bone == null) continue;
 
-            var bonePose = pose.GetPoseInfo(bone);
+            var bonePose = pose.GetPoseInfo(bone, b.Slot);
             if (!bonePose.HasStacks) continue;
             
             var list = new List<BonePoseData>();
