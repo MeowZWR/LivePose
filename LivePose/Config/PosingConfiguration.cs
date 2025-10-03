@@ -32,4 +32,5 @@ public class PosingConfiguration
     public string[]? EnabledBoneCategories;
     
     public bool CursedMode { get; set; }
+    public bool AutoSaveOnDestroy { get; set; } = true;
 }

@@ -10,6 +10,8 @@ using LivePose.Game.Posing;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using LivePose.Core;
 using LivePose.Entities.Actor;
 using LivePose.Game.Actor;
@@ -107,10 +109,10 @@ public class IpcService : IDisposable
     public LivePoseData SerializePose(SkeletonPosingCapability skeletonPosingCapability, PoseInfo pose) {
         var boneList = new LivePoseData();
         foreach(var b in pose.StackCounts.Keys) {
-            var bone = skeletonPosingCapability.GetBone(b, PoseInfoSlot.Character);
+            var bone = skeletonPosingCapability.GetBone(b);
             if (bone == null) continue;
 
-            var bonePose = pose.GetPoseInfo(bone);
+            var bonePose = pose.GetPoseInfo(bone, b.Slot);
             if (!bonePose.HasStacks) continue;
             
             var list = new List<BonePoseData>();
@@ -182,8 +184,15 @@ public class IpcService : IDisposable
                     data.FacePoses.Add(new LivePoseCacheEntry(key, pose));
             }
         }
-        
+
+        data.AnimationSpeedMultiplier = timelineCapability.SpeedMultiplierOverride;
         data.Frozen = timelineCapability.SpeedMultiplierOverride == 0;
+
+        if(data.Frozen) {
+            unsafe {
+                data.AnimationState = GetAnimationState(timelineCapability.NativeCharacter);
+            }
+        }
         
         return data.Serialize();
     }
@@ -231,6 +240,8 @@ public class IpcService : IDisposable
             if(livePoseData.CursedPose != null) {
                 skeletonPosingCapability.PoseInfo = DeserializePose(livePoseData.CursedPose);
             } else {
+                skeletonPosingCapability.BodyPoses.Clear();
+                skeletonPosingCapability.FacePoses.Clear();
                 foreach(var pose in livePoseData.BodyPoses) {
                     skeletonPosingCapability.BodyPoses[(pose.TimelineId, pose.SecondaryTimelineId)] = DeserializePose(pose.Pose);
                 }
@@ -244,15 +255,74 @@ public class IpcService : IDisposable
             
             if(livePoseData.Frozen) {
                 timelineCapability.SetOverallSpeedOverride(0f);
+                unsafe {
+                    SetAnimationState(timelineCapability.NativeCharacter, livePoseData.AnimationState);
+                }
             } else {
-                timelineCapability.ResetOverallSpeedOverride();
+                if(livePoseData.AnimationSpeedMultiplier.HasValue && !livePoseData.AnimationSpeedMultiplier.Value.IsApproximatelySame(1)) {
+                    timelineCapability.SetOverallSpeedOverride(livePoseData.AnimationSpeedMultiplier.Value);
+                } else {
+                    timelineCapability.ResetOverallSpeedOverride();
+                }
             }
             
         }, delayTicks: 1);
     }
-    
+
+
+
     public void Dispose()
     {
         DisposeIPC();
+    }
+
+    public unsafe List<AnimationState> GetAnimationState(Character* character) {
+        var state = new List<AnimationState>();
+        if(character == null) return state;
+        if(!character->IsCharacter()) return state;
+        if(character->DrawObject == null) return state;
+        if (character->DrawObject->GetObjectType() != ObjectType.CharacterBase) return state;
+        if (((CharacterBase*)character->DrawObject)->GetModelType() != CharacterBase.ModelType.Human) return state;
+        var human = (Human*)character->DrawObject;
+        var skeleton = human->Skeleton;
+        if (skeleton == null) return state;
+        for (var i = 0; i < skeleton->PartialSkeletonCount && i < 1; ++i) {
+            var partialSkeleton = &skeleton->PartialSkeletons[i];
+            var animatedSkeleton = partialSkeleton->GetHavokAnimatedSkeleton(0);
+            if (animatedSkeleton == null) continue;
+            for (var animControl = 0; animControl < animatedSkeleton->AnimationControls.Length && animControl < 1; ++animControl) {
+                var control = animatedSkeleton->AnimationControls[animControl].Value;
+                if (control == null) continue;
+                state.Add(new AnimationState(i, animControl, control->hkaAnimationControl.LocalTime));
+            }
+        }
+        
+        return state;
+    }
+    
+    private unsafe void SetAnimationState(Character* character, List<AnimationState> state) {
+        if(character == null) return;
+        if(state.Count == 0) return;
+        _framework.RunOnTick(() => {
+            if(!character->IsCharacter()) return;
+            if(character->DrawObject == null) return;
+            if (character->DrawObject->GetObjectType() != ObjectType.CharacterBase) return;
+            if (((CharacterBase*)character->DrawObject)->GetModelType() != CharacterBase.ModelType.Human) return;
+            var human = (Human*)character->DrawObject;
+            var skeleton = human->Skeleton;
+            if (skeleton == null) return;
+            for (var i = 0; i < skeleton->PartialSkeletonCount && i < 1; ++i) {
+                var partialSkeleton = &skeleton->PartialSkeletons[i];
+                var animatedSkeleton = partialSkeleton->GetHavokAnimatedSkeleton(0);
+                if (animatedSkeleton == null) continue;
+                for (var animControl = 0; animControl < animatedSkeleton->AnimationControls.Length && animControl < 1; ++animControl) {
+                    var control = animatedSkeleton->AnimationControls[animControl].Value;
+                    if (control == null) continue;
+                    var controlState = state.Find(s => s.SkeletonIndex == i && s.AnimationControlIndex == animControl);
+                    if (controlState == null) continue;
+                    control->LocalTime = controlState.Time;
+                }
+            }
+        }, delayTicks: 1);
     }
 }

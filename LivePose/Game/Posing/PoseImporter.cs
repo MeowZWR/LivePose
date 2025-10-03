@@ -1,4 +1,5 @@
-﻿using LivePose.Core;
+﻿using System.Runtime.CompilerServices;
+using LivePose.Core;
 using LivePose.Files;
 using LivePose.Game.Posing.Skeletons;
 
@@ -6,8 +7,12 @@ namespace LivePose.Game.Posing;
 
 public class PoseImporter(PoseFile poseFile, PoseImporterOptions options, bool expressionPhase = false)
 {
-    public void ApplyBone(Bone bone, BonePoseInfo poseInfo)
+    public void ApplyBone(Bone bone, BonePoseInfo poseInfo, [CallerFilePath] string callerFilePath = "", [CallerMemberName] string callerMemberName = "", [CallerLineNumber] int callerLineNumber = 0)
     {
+        
+        LivePose.Log.Debug($"ApplyBone: {callerMemberName} @ {callerFilePath}:{callerLineNumber}");
+
+        
         if(expressionPhase)
         {
             if(poseInfo.Name == "j_kao")
@@ -67,5 +72,4 @@ public class PoseImporterOptions(BoneFilter filter, TransformComponents transfor
 {
     public BoneFilter BoneFilter { get; set; } = filter;
     public TransformComponents TransformComponents { get; set; } = transformComponents;
-    public bool ApplyModelTransform { get; set; } = applyModelTransform;
 }

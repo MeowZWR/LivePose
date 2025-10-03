@@ -108,12 +108,18 @@ public class LivePoseCharacterData {
     public bool ShouldSerializeBodyPoses() => BodyPoses.Count > 0;
     public bool ShouldSerializeFacePoses() => FacePoses.Count > 0;
     public bool ShouldSerializeCursedPose() => CursedPose != null;
+    public bool ShouldSerializeAnimationState() => AnimationState.Count > 0;
+    public bool ShouldSerializeAnimationSpeedMultiplier() => AnimationSpeedMultiplier != null;
     
     // public Dictionary<uint, Dictionary<BonePoseInfoId, List<BonePoseData>>> BodyPoses = [];
 
     public List<LivePoseCacheEntry> BodyPoses = [];
     public List<LivePoseCacheEntry> FacePoses = [];
     public bool Frozen = false;
+    public float? AnimationSpeedMultiplier;
+    public List<AnimationState> AnimationState = [];
+    
+    
     public LivePoseData? CursedPose = null;
 
     public string Serialize() {
@@ -130,3 +136,5 @@ public class LivePoseCharacterData {
     }
     
 }
+
+public record AnimationState(int SkeletonIndex, int AnimationControlIndex, float Time);

@@ -3,6 +3,7 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using LivePose.Capabilities.Core;
+using LivePose.Config;
 using LivePose.Core;
 using LivePose.Entities.Actor;
 
@@ -22,6 +23,9 @@ public abstract class ActorCharacterCapability(ActorEntity parent) : ActorCapabi
     
     public unsafe Character*  NativeCharacter => (Character*)Character.Address;
 
+    public CharacterConfiguration CharacterConfiguration => parent.CharacterConfiguration;
+    
+    
     public unsafe bool IsReady {
         get {
             var chr = NativeCharacter;
