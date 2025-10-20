@@ -7,6 +7,7 @@ using LivePose.Game.Actor;
 using LivePose.Game.Core;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using Dalamud.Game.ClientState.Objects.Enums;
 using NativeCharacter = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
 
 namespace LivePose.Entities;
@@ -68,6 +69,9 @@ public unsafe class EntityActorManager : IDisposable
             if(!go.Native()->IsCharacter())
                 return;
 
+            if(go.ObjectKind == ObjectKind.Ornament) return;
+            
+            
             // TODO: We should allow manipulation of overworld actors too
             if(!go.IsGPose())
                 return;

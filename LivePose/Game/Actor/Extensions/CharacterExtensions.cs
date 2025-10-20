@@ -7,7 +7,7 @@ using global::LivePose.Game.Posing;
 using global::LivePose.Game.Types;
 using System;
 using System.Collections.Generic;
-using StrictsDrawObjectData = FFXIVClientStructs.FFXIV.Client.Game.Character.DrawObjectData;
+using StructsDrawObjectData = FFXIVClientStructs.FFXIV.Client.Game.Character.DrawObjectData;
 using StructsBattleCharacter = FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara;
 using StructsCharacter = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
 using StructsCharacterBase = FFXIVClientStructs.FFXIV.Client.Graphics.Scene.CharacterBase;
@@ -42,7 +42,7 @@ public static class CharacterExtensions
         return (StructsBattleCharacter*)go.Address;
     }
 
-    public static unsafe StrictsDrawObjectData* GetWeaponDrawObjectData(this ICharacter go, ActorEquipSlot slot)
+    public static unsafe StructsDrawObjectData* GetWeaponDrawObjectData(this ICharacter go, ActorEquipSlot slot)
     {
         StructsDrawDataContainer.WeaponSlot? weaponSlot = slot switch
         {
@@ -57,11 +57,22 @@ public static class CharacterExtensions
 
         var drawData = &go.Native()->DrawData;
 
-        fixed(StrictsDrawObjectData* drawObjData = &drawData->Weapon(weaponSlot.Value))
+        fixed(StructsDrawObjectData* drawObjData = &drawData->Weapon(weaponSlot.Value))
         {
-            StrictsDrawObjectData* drawObjectData = drawObjData;
+            StructsDrawObjectData* drawObjectData = drawObjData;
             return drawObjectData;
         }
+    }
+
+    public static unsafe StructsDrawObjectData* GetOrnamentDrawObjectData(this ICharacter go) {
+        var chr = (StructsCharacter*)go.Address;
+        if(chr == null) return null;
+
+
+        if(chr->OrnamentData.OrnamentObject == null) return null;
+
+        var drawData = (StructsDrawObjectData*) &chr->OrnamentData.OrnamentObject->DrawData;
+        return drawData;
     }
 
     public static unsafe BrioCharacterBase* GetCharacterBase(this ICharacter go) => go.GetDrawObject<BrioCharacterBase>();
@@ -92,6 +103,11 @@ public static class CharacterExtensions
         if(charaBase != null)
             list.Add(new CharacterBaseInfo { CharacterBase = charaBase, Slot = PoseInfoSlot.Prop });
 
+        charaBase = go.GetOrnamentBase();
+        if(charaBase != null) {
+            list.Add(new CharacterBaseInfo() { CharacterBase = charaBase, Slot = PoseInfoSlot.Ornament });
+        }
+
         return list;
     }
 
@@ -104,6 +120,12 @@ public static class CharacterExtensions
         }
 
         return null;
+    }
+
+    public static unsafe BrioCharacterBase* GetOrnamentBase(this ICharacter go) {
+        var ornament = go.Native()->OrnamentData.OrnamentObject;
+        if(ornament == null) return null;
+        return (BrioCharacterBase*)ornament->DrawObject;
     }
 
     public static unsafe BrioHuman* GetHuman(this ICharacter go)

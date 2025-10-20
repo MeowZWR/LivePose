@@ -59,6 +59,7 @@ public class PosingOverlayWindow : Window, IDisposable
         _conditions = conditions;
 
         _gPoseService.OnGPoseStateChange += OnGPoseStateChanged;
+        ForceMainWindow = true;
     }
 
     public override bool DrawConditions() {
@@ -160,7 +161,7 @@ public class PosingOverlayWindow : Window, IDisposable
                         clickables.Add(new ClickableItem
                         {
                             Item = posing.SkeletonPosing.GetBonePose(bone).Id,
-                            ScreenPosition = boneScreen,
+                            ScreenPosition = ImGui.GetMainViewport().Pos + boneScreen,
                             Size = config.BoneCircleDisplaySize,
                             ClickSize = config.BoneCircleClickSize,
                         });
@@ -173,7 +174,7 @@ public class PosingOverlayWindow : Window, IDisposable
                             var parentWorldPosition = Vector3.Transform(bone.Parent.LastTransform.Position, modelMatrix);
                             if(camera->WorldToScreen(parentWorldPosition, out var parentScreen))
                             {
-                                clickables.Last().ParentScreenPosition = parentScreen;
+                                clickables.Last().ParentScreenPosition = ImGui.GetMainViewport().Pos + parentScreen;
                             }
 
                         }

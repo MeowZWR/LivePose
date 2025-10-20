@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Dalamud.Configuration;
+using LivePose.Game.Posing;
 
 namespace LivePose.Config;
 
@@ -20,6 +21,8 @@ public class Configuration : IPluginConfiguration
 
     // Library
     public LibraryConfiguration Library { get; set; } = new LibraryConfiguration();
+
+    public List<BoneCategory>? BoneCategories { get; set; } = null;
     
     public string LastExportPath { get; set; } = string.Empty;
 

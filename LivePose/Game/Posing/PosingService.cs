@@ -1,10 +1,11 @@
-﻿using Dalamud.Bindings.ImGuizmo;
+﻿using System;
+using Dalamud.Bindings.ImGuizmo;
 using LivePose.Config;
 using LivePose.Core;
 
 namespace LivePose.Game.Posing;
 
-public class PosingService
+public class PosingService : IDisposable
 {
     public PosingOperation Operation { get; set; } = PosingOperation.Rotate;
 
@@ -75,6 +76,11 @@ public class PosingService
 
     public PoseImporterOptions GetNewPoseImporterOptions(TransformComponents transformComponents, bool applyModelTransform)
         => new PoseImporterOptions(new BoneFilter(this), transformComponents, applyModelTransform);
+
+    public void Dispose() { 
+        BoneCategories.Dispose();
+        
+    }
 }
 
 public enum PosingCoordinateMode

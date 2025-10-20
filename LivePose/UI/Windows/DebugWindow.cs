@@ -30,7 +30,7 @@ public unsafe class DebugWindow(TimelineIdentification timelineIdentification, I
                         foreach(var (timelines, pose) in skeletonPosingCapability.BodyPoses) {
                             ImCallback.TreeNode($"Body Pose [{timelines}] ({timelineIdentification.GetBodyPoseName(timelines.Item1, timelines.Item2)})", () => {
                                 foreach(var (b, sc) in pose.StackCounts) {
-                                    ImGui.Text($"{b.BoneName}[{b.Slot}/{b.Partial}]: {sc}");
+                                    ImGui.Text($"{Localize.GetNullable($"bones.{b.BoneName}")}({b.BoneName})[{b.Slot}/{b.Partial}]: {sc}");
                                 }
                             });
                         }
@@ -42,7 +42,7 @@ public unsafe class DebugWindow(TimelineIdentification timelineIdentification, I
                         foreach(var (timeline, pose) in skeletonPosingCapability.FacePoses) {
                             ImCallback.TreeNode($"Face Pose [{timeline}] ({timelineIdentification.GetExpressionName(timeline)})", () => {
                                 foreach(var (b, sc) in pose.StackCounts) {
-                                    ImGui.Text($"{b}: {sc}");
+                                    ImGui.Text($"{Localize.GetNullable($"bones.{b.BoneName}")}({b.BoneName})[{b.Slot}/{b.Partial}]: {sc}");
                                 }
                             });
                         }

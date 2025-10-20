@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Numerics;
 using LivePose.Core;
+using LivePose.IPC;
 
 namespace LivePose.Capabilities.Actor;
 
@@ -21,6 +22,11 @@ public class ActionTimelineCapability(IFramework framework, ActorEntity parent) 
             
             if(SpeedMultiplierPosition == null || Vector3.DistanceSquared(SpeedMultiplierPosition.Value, Character.Position) > 0.01f) {
                 ResetOverallSpeedOverride();
+                if(GameObject.ObjectIndex == 0) {
+                    if(LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                        service.SetPlayerPoseTag();
+                    }
+                }
                 return null;
             }
 
