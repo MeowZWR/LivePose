@@ -19,6 +19,7 @@ using LivePose.UI.Windows;
 using LivePose.UI.Windows.Specialized;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using LivePose.Capabilities.Posing;
 using LivePose.Entities.Core;
@@ -213,4 +214,20 @@ public class LivePose : IDisposable {
         if(!TryGetService<DebugWindow>(out var debugWindow)) return;
         debugWindow.Toggle();
     }
+
+    public void ProcessCommand(List<string> args) {
+        if (args.Count < 1) {
+            ToggleOverlay();
+        } else {
+            switch (args[0].ToLowerInvariant()) {
+                case "debug":
+                    ToggleDebugWindow();
+                    break;
+                default:
+                    ToggleOverlay();
+                    break;
+            }
+        }
+    }
+    
 }

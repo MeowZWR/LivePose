@@ -1,23 +1,36 @@
-﻿using LivePose.Game.Posing.Skeletons;
+﻿using System;
+using LivePose.Game.Posing.Skeletons;
 using System.Collections.Generic;
 using System.Linq;
+using LivePose.Config;
 
 namespace LivePose.Game.Posing;
 
 public class BoneFilter {
     private readonly PosingService _posingService;
+    private readonly ConfigurationService _configurationService;
 
     private readonly HashSet<string> _allowedCategories = [];
 
     private readonly HashSet<string> _excludedPrefixes = [];
 
-    public IReadOnlyList<BoneCategories.BoneCategory> AllCategories => _posingService.BoneCategories.Categories;
+    public IReadOnlyList<BoneCategory> AllCategories => _posingService.BoneCategories.Categories;
 
     public BoneFilter(PosingService posingService) {
         _posingService = posingService;
-
+        LivePose.TryGetService(out _configurationService);
+        
         foreach(var category in _posingService.BoneCategories.Categories)
             _allowedCategories.Add(category.Id);
+    }
+
+
+    private bool isCached;
+    
+    private void ClearCache() {
+        isCached = false;
+        _configurationService.OnConfigurationChanged -= ClearCache;
+        boneValidCache.Clear();
     }
 
     private Dictionary<string, bool> boneValidCache = new();
@@ -40,16 +53,31 @@ public class BoneFilter {
             else
                 return false;
 
+        if(slot == PoseInfoSlot.Ornament) {
+            return OrnamentsAllowed && bone.Name != "n_root";
+        }
+
         if(boneValidCache.TryGetValue(bone.Name, out var valid)) return valid;
         boneValidCache[bone.Name] = true;
 
+        if(!isCached) {
+            isCached = true;
+            _configurationService.OnConfigurationChanged += ClearCache;
+        }
+        
+
         // Check if the bone is in any of the categories and that category is visible
         foreach(var category in AllCategories) {
-            if(category.Type != BoneCategories.BoneCategoryTypes.Filter)
-                continue;
-
             foreach(var boneName in category.Bones) {
-                if(bone.Name.StartsWith(boneName)) {
+                if (string.IsNullOrWhiteSpace(boneName)) continue;
+                
+                var match = category.Type switch {
+                    BoneCategoryTypes.Filter => bone.Name.StartsWith(boneName),
+                    BoneCategoryTypes.Exact => bone.Name.Equals(boneName),
+                    _ => false,
+                };
+                
+                if(match) {
                     foundBone = true;
 
                     if(_allowedCategories.Any(x => category.Id == x))
@@ -67,18 +95,20 @@ public class BoneFilter {
     }
 
     public bool WeaponsAllowed => _allowedCategories.Any((x) => x == "weapon");
+    
+    public bool OrnamentsAllowed => _allowedCategories.Any((x) => x == "ornament");
 
     public bool OtherAllowed => _allowedCategories.Any((x) => x == "other");
 
     public bool IsCategoryEnabled(string id) => _allowedCategories.Any((x) => x == id);
-    public bool IsCategoryEnabled(BoneCategories.BoneCategory category) => _allowedCategories.Any(x => category.Id == x);
+    public bool IsCategoryEnabled(BoneCategory category) => _allowedCategories.Any(x => category.Id == x);
 
     public void DisableCategory(string id) {
         boneValidCache.Clear();
         _allowedCategories.Remove(id);
     }
 
-    public void DisableCategory(BoneCategories.BoneCategory category) {
+    public void DisableCategory(BoneCategory category) {
         boneValidCache.Clear();
         _allowedCategories.Remove(category.Id);
     }
@@ -88,7 +118,7 @@ public class BoneFilter {
         _allowedCategories.Add(id);
     }
 
-    public void EnableCategory(BoneCategories.BoneCategory category) {
+    public void EnableCategory(BoneCategory category) {
         boneValidCache.Clear();
         _allowedCategories.Add(category.Id);
     }
@@ -116,7 +146,7 @@ public class BoneFilter {
         _allowedCategories.Add(id);
     }
 
-    public void EnableOnly(BoneCategories.BoneCategory category) {
+    public void EnableOnly(BoneCategory category) {
         boneValidCache.Clear();
         _allowedCategories.Clear();
         _allowedCategories.Add(category.Id);

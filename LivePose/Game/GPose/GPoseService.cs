@@ -95,9 +95,11 @@ public unsafe class GPoseService : IDisposable
 
     private ulong CopyFromCharacterDetour(CharacterSetupContainer* thisPtr, Character* source, CharacterSetupContainer.CopyFlags flags) {
         try {
+            
             return _copyFromCharacterHook.Original(thisPtr, source, flags);
         } finally {
             try {
+                LivePose.Log.Warning($"Copy Character: {source->ObjectIndex} -> {thisPtr->OwnerObject->ObjectIndex}");
                 OnCopyActor(source, thisPtr->OwnerObject);
             } catch(Exception ex) {
                 LivePose.Log.Error(ex, "Error handling OnCopyActor");
@@ -107,39 +109,45 @@ public unsafe class GPoseService : IDisposable
 
     private void OnCopyActor(Character* source, Character* destination) {
         if(source == null || source->ObjectIndex >= 200) return;
-        if(destination == null || source->ObjectIndex < 200 || source->ObjectIndex > 439) return;
-        
+        if(destination == null || destination->ObjectIndex < 200 || destination->ObjectIndex > 439) return;
         var obj = _objectTable.CreateObjectReference((nint)source);
-        if(obj is not IPlayerCharacter sourceCharacter) return;
-
+        if(obj is not IPlayerCharacter sourceCharacter)return;
         var destObj = _objectTable.CreateObjectReference((nint)destination);
         if(destObj == null) return;
         
         LivePose.Log.Verbose($"Copy Character: {sourceCharacter.Name} -> {destination->ObjectIndex}");
-
+        
         if(!_entityManager.TryGetEntity(new EntityId(sourceCharacter), out var entity)) return;
         if(!entity.TryGetCapability<PosingCapability>(out var posing)) return;
         var pose = posing.ExportPose();
 
         var json = JsonSerializer.Serialize(pose);
+
+        var destObjectIndex = destObj.ObjectIndex;
+        _framework.RunOnTick(() => {
+            TrySetPose(destObjectIndex, json);
+        }, delayTicks: 60);
         
-        TrySetPose(destObj, json);
     }
 
-    private void TrySetPose(IGameObject obj, string json, int total = 0, int success = 0) {
+    private static Random _random = new Random();
+    
+    private void TrySetPose(int objIndex, string json, int total = 0, int success = 0) {
         if(success > 2) return;
         if(total > 100) return;
         _framework.RunOnTick(() => {
             var fadeAddon = _gameGui.GetAddonByName("FadeMiddle");
             if(fadeAddon == null || !fadeAddon.IsVisible) {
-                LivePose.Log.Warning("Send Pose to Brio");
+                var obj = _objectTable[objIndex];
+                if(obj == null) return;
+                LivePose.Log.Debug("Send Pose to Brio");
                 var s = _brioService.SetPose(obj, json);
-                TrySetPose(obj, json, total++, success = s ? success + 1 : success);
+                TrySetPose(objIndex, json, total++, success = s ? success + 1 : success);
             } else {
-                TrySetPose(obj, json, total++, success);
+                TrySetPose(objIndex, json, total++, success);
             }
             
-        }, delayTicks: 5);
+        }, delayTicks: 5 + _random.Next(0, 10));
     }
     
 

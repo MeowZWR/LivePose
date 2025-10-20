@@ -12,8 +12,9 @@ namespace LivePose.UI.Controls.Editors;
 public class BoneSearchControl
 {
     private string _searchTerm = string.Empty;
-    public void Draw(string id, PosingCapability posing)
-    {
+    public void Draw(string id, PosingCapability posing, Action<BonePoseInfoId>? onClick = null) {
+        onClick ??= (bpii) => posing.Selected = bpii; 
+        
         ImGui.PushStyleVar(ImGuiStyleVar.IndentSpacing, 10);
 
         using(ImRaii.PushId(id))
@@ -36,16 +37,13 @@ public class BoneSearchControl
                     {
                         if(node.Success)
                         {
-                            if(ImGui.IsItemClicked())
-                                posing.Selected = PosingSelectionType.ModelTransform;
-
                             if(posing.SkeletonPosing.CharacterSkeleton != null)
                             {
                                 using(var skeleton = ImRaii.TreeNode("Character", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.OpenOnDoubleClick))
                                 {
                                     if(skeleton.Success)
                                     {
-                                        DrawBone(posing.SkeletonPosing.CharacterSkeleton.RootBone, posing, PoseInfoSlot.Character);
+                                        DrawBone(posing.SkeletonPosing.CharacterSkeleton.RootBone, posing, PoseInfoSlot.Character, onClick);
                                     }
                                 }
                             }
@@ -56,7 +54,7 @@ public class BoneSearchControl
                                 {
                                     if(skeleton.Success)
                                     {
-                                        DrawBone(posing.SkeletonPosing.MainHandSkeleton.RootBone, posing, PoseInfoSlot.MainHand);
+                                        DrawBone(posing.SkeletonPosing.MainHandSkeleton.RootBone, posing, PoseInfoSlot.MainHand, onClick);
                                     }
                                 }
                             }
@@ -67,7 +65,17 @@ public class BoneSearchControl
                                 {
                                     if(skeleton.Success)
                                     {
-                                        DrawBone(posing.SkeletonPosing.OffHandSkeleton.RootBone, posing, PoseInfoSlot.OffHand);
+                                        DrawBone(posing.SkeletonPosing.OffHandSkeleton.RootBone, posing, PoseInfoSlot.OffHand, onClick);
+                                    }
+                                }
+                            }
+
+                            if(posing.SkeletonPosing.OrnamentSkeleton != null) {
+                                using(var skeleton = ImRaii.TreeNode("Fashion Accessory", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.OpenOnDoubleClick))
+                                {
+                                    if(skeleton.Success)
+                                    {
+                                        DrawBone(posing.SkeletonPosing.OrnamentSkeleton.RootBone, posing, PoseInfoSlot.Ornament, onClick);
                                     }
                                 }
                             }
@@ -80,7 +88,7 @@ public class BoneSearchControl
         ImGui.PopStyleVar();
     }
 
-    private void DrawBone(Bone bone, PosingCapability posing, PoseInfoSlot slot)
+    private void DrawBone(Bone bone, PosingCapability posing, PoseInfoSlot slot, Action<BonePoseInfoId> onClick)
     {
         var bonePoseInfoId = new BonePoseInfoId(bone.Name, bone.PartialId, slot);
 
@@ -114,12 +122,12 @@ public class BoneSearchControl
                 {
                     if(clicked || ImGui.IsItemClicked())
                     {
-                        posing.Selected = bonePoseInfoId;
+                        onClick(bonePoseInfoId);
                     }
 
                     foreach(var child in bone.Children)
                     {
-                        DrawBone(child, posing, slot);
+                        DrawBone(child, posing, slot, onClick);
                     }
                 }
             }
@@ -128,7 +136,7 @@ public class BoneSearchControl
         {
             foreach(var child in bone.Children)
             {
-                DrawBone(child, posing, slot);
+                DrawBone(child, posing, slot, onClick);
             }
         }
     }

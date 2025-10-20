@@ -7,12 +7,8 @@ namespace LivePose.Game.Posing;
 
 public class PoseImporter(PoseFile poseFile, PoseImporterOptions options, bool expressionPhase = false)
 {
-    public void ApplyBone(Bone bone, BonePoseInfo poseInfo, [CallerFilePath] string callerFilePath = "", [CallerMemberName] string callerMemberName = "", [CallerLineNumber] int callerLineNumber = 0)
+    public void ApplyBone(Bone bone, BonePoseInfo poseInfo)
     {
-        
-        LivePose.Log.Debug($"ApplyBone: {callerMemberName} @ {callerFilePath}:{callerLineNumber}");
-
-        
         if(expressionPhase)
         {
             if(poseInfo.Name == "j_kao")
@@ -60,6 +56,17 @@ public class PoseImporter(PoseFile poseFile, PoseImporterOptions options, bool e
             if(isAllowed == true)
             {
                 if(poseFile.OffHand.TryGetValue(bone.Name, out var fileBone))
+                {
+                    poseInfo.Apply(fileBone, bone.LastRawTransform, TransformComponents.All, options.TransformComponents, BoneIKInfo.Disabled, PoseMirrorMode.None, true);
+                }
+            }
+        }
+
+        if(poseInfo.Slot == PoseInfoSlot.Ornament) {
+            var isAllowed = options.BoneFilter.OrnamentsAllowed;
+            if(isAllowed == true)
+            {
+                if(poseFile.Ornament.TryGetValue(bone.Name, out var fileBone))
                 {
                     poseInfo.Apply(fileBone, bone.LastRawTransform, TransformComponents.All, options.TransformComponents, BoneIKInfo.Disabled, PoseMirrorMode.None, true);
                 }
