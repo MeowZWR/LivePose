@@ -87,8 +87,8 @@ public unsafe class GPoseService : IDisposable
         _exitGPoseHook = interopProvider.HookFromAddress<ExitGPoseDelegate>(exitGPoseAddress, ExitingGPoseDetour);
         _exitGPoseHook.Enable();
 
-        _copyFromCharacterHook = interopProvider.HookFromAddress<CharacterSetupContainer.Delegates.CopyFromCharacter>(CharacterSetupContainer.Addresses.CopyFromCharacter.Value, CopyFromCharacterDetour);
-        _copyFromCharacterHook.Enable();
+        // _copyFromCharacterHook = interopProvider.HookFromAddress<CharacterSetupContainer.Delegates.CopyFromCharacter>(CharacterSetupContainer.Addresses.CopyFromCharacter.Value, CopyFromCharacterDetour);
+        // _copyFromCharacterHook.Enable();
 
         _framework.Update += OnFrameworkUpdate;
     }
@@ -210,7 +210,7 @@ public unsafe class GPoseService : IDisposable
         
         _enterGPoseHook.Dispose();
         _exitGPoseHook.Dispose();
-        _copyFromCharacterHook.Dispose();
+        // _copyFromCharacterHook.Dispose();
 
         GC.SuppressFinalize(this);
     }
