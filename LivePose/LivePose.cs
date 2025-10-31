@@ -170,9 +170,6 @@ public class LivePose : IDisposable {
         serviceCollection.AddSingleton<PosingOverlayToolbarWindow>();
         serviceCollection.AddSingleton<PosingTransformWindow>();
         serviceCollection.AddSingleton<PosingGraphicalWindow>();
-        serviceCollection.AddSingleton<ImBrioText>();
-
-
 
         return serviceCollection;
     }
