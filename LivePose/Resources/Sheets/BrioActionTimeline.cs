@@ -1,4 +1,4 @@
-﻿
+
 //
 // Some code in this file was generated and is from the Lumina.Excel project (https://github.com/NotAdam/Lumina.Excel)
 // (Lumina.Excel.Sheets.ActionTimeline)
@@ -14,6 +14,9 @@ namespace LivePose.Resources.Sheets;
 readonly public struct BrioActionTimeline(ExcelPage page, uint offset, uint row) : IExcelRow<BrioActionTimeline>
 {
     public uint RowId => row;
+
+    public ExcelPage ExcelPage => page;
+    public uint RowOffset => offset;
 
     public readonly ReadOnlySeString Key => page.ReadString(offset, offset);
     public readonly RowRef<WeaponTimeline> WeaponTimeline => new(page.Module, (uint)page.ReadUInt16(offset + 4), page.Language);
