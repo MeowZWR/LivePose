@@ -75,7 +75,7 @@ public class PoseImporter(PoseFile poseFile, PoseImporterOptions options, bool e
     }
 }
 
-public class PoseImporterOptions(BoneFilter filter, TransformComponents transformComponents, bool applyModelTransform)
+public class PoseImporterOptions(BoneFilter filter, TransformComponents transformComponents)
 {
     public BoneFilter BoneFilter { get; set; } = filter;
     public TransformComponents TransformComponents { get; set; } = transformComponents;

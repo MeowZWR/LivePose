@@ -42,6 +42,7 @@ public class PosingGraphicalWindow : Window, IDisposable
     private readonly PosingTransformEditor _transformEditor = new();
     private readonly BoneSearchControl _boneSearchControl = new();
     private readonly ICondition _conditions;
+    private readonly IObjectTable _objectTable;
     private float _closestHover = float.MaxValue;
 
     private Matrix4x4? _trackingMatrix;
@@ -50,7 +51,7 @@ public class PosingGraphicalWindow : Window, IDisposable
     int _selectedPane = 0;
     private bool _hideControlPane = false;
 
-    public PosingGraphicalWindow(EntityManager entityManager, HistoryService groupedUndoService, ConfigurationService configurationService, PosingService posingService, GPoseService gPoseService, IClientState clientState, ICondition condition) : base($"{LivePose.Name} - POSING###livepose_posing_graphical_window")
+    public PosingGraphicalWindow(EntityManager entityManager, HistoryService groupedUndoService, ConfigurationService configurationService, PosingService posingService, GPoseService gPoseService, IClientState clientState, ICondition condition, IObjectTable objectTable) : base($"{LivePose.Name} - POSING###livepose_posing_graphical_window")
     {
         Namespace = "livepose_posing_graphical_namespace";
 
@@ -61,6 +62,7 @@ public class PosingGraphicalWindow : Window, IDisposable
         _gPoseService = gPoseService;
         _clientState = clientState;
         _conditions = condition;
+        _objectTable = objectTable;
 
         _posePositions = ResourceProvider.Instance.GetResourceDocument<GraphicalPosePositionFile>("Data.GraphicalBonePosePositions.json");
         _posePositions.Process();
@@ -82,8 +84,8 @@ public class PosingGraphicalWindow : Window, IDisposable
 
         if(posing.GameObject.ObjectIndex >= 2) return false;
 
-        if(_clientState.LocalPlayer == null) return false;
-        if(_clientState.LocalPlayer.StatusFlags.HasFlag(StatusFlags.InCombat)) return false;
+        if(_objectTable.LocalPlayer == null) return false;
+        if(_objectTable.LocalPlayer.StatusFlags.HasFlag(StatusFlags.InCombat)) return false;
         if(_conditions.AnyUnsafe()) return false;
         
         return base.DrawConditions();

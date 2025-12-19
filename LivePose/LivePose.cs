@@ -28,8 +28,6 @@ namespace LivePose;
 
 public class LivePose : IDisposable {
     public static string Name { get; private set; } = "LivePose";
-
-    internal static bool IsPlugin;
     
     private static ServiceProvider? _services = null;
     public static IPluginLog Log { get; private set; } = null!;
@@ -82,7 +80,7 @@ public class LivePose : IDisposable {
                 Log.Info($"Started {Name} in {stopwatch.ElapsedMilliseconds}ms");
 
 
-                _services.GetService<GPoseService>()?.FakeGPose = !dalamudServices.ClientState.IsGPosing;
+                _services.GetService<GPoseService>()!.FakeGPose = !dalamudServices.ClientState.IsGPosing;
 
             }
             catch(Exception e)
@@ -115,6 +113,7 @@ public class LivePose : IDisposable {
         serviceCollection.AddSingleton(dalamudServices.Conditions);
         serviceCollection.AddSingleton(dalamudServices.GameConfig);
         serviceCollection.AddSingleton(dalamudServices.GameGui);
+        serviceCollection.AddSingleton(dalamudServices.PlayerState);
         
         serviceCollection.AddSingleton<FakePoseService>();
         
@@ -139,10 +138,7 @@ public class LivePose : IDisposable {
         serviceCollection.AddSingleton<ActorRedrawService>();
         serviceCollection.AddSingleton<ActionTimelineService>();
         serviceCollection.AddSingleton<GPoseService>();
-        if(IsPlugin) {
-            serviceCollection.AddSingleton<CommandHandlerService>();
-        }
-
+        
         serviceCollection.AddSingleton<SkeletonService>();
         serviceCollection.AddSingleton<PosingService>();
         serviceCollection.AddSingleton<IKService>();
@@ -198,10 +194,10 @@ public class LivePose : IDisposable {
     }
 
     public void ToggleOverlay() {
-        if(!TryGetService<IClientState>(out var clientState)) return;
-        if(clientState.LocalPlayer == null) return;
+        if(!TryGetService<IObjectTable>(out var objectTable)) return;
+        if(objectTable.LocalPlayer == null) return;
         if(!TryGetService<EntityManager>(out var manager)) return;
-        if(!manager.TryGetEntity(new EntityId(clientState.LocalPlayer), out var entity)) return;
+        if(!manager.TryGetEntity(new EntityId(objectTable.LocalPlayer), out var entity)) return;
         if(!entity.TryGetCapability<PosingCapability>(out var posingCapability)) return;
         manager.SetSelectedEntity(entity);
         posingCapability.OverlayOpen = !posingCapability.OverlayOpen;

@@ -15,14 +15,15 @@ public class CommandHandlerService : IDisposable
     private readonly ICommandManager _commandManager;
     private readonly IChatGui _chatGui;
     private readonly UIManager _uiManager;
-    private readonly IClientState _clientState;
+    private readonly IObjectTable _objectTable;
+    
 
-    public CommandHandlerService(ICommandManager commandManager, IChatGui chatGui, UIManager uiManager, IClientState clientState)
+    public CommandHandlerService(ICommandManager commandManager, IChatGui chatGui, UIManager uiManager, IObjectTable objectTable)
     {
         _commandManager = commandManager;
         _chatGui = chatGui;
         _uiManager = uiManager;
-        _clientState = clientState;
+        _objectTable = objectTable;
 
         _commandManager.AddHandler(LivePoseCommandName, new CommandInfo(OnCommand)
         {
@@ -41,9 +42,9 @@ public class CommandHandlerService : IDisposable
         switch(argumentList[0].ToLowerInvariant())
         {
             case "overlay":
-                if(_clientState.LocalPlayer != null) {
+                if(_objectTable.LocalPlayer != null) {
                     if(LivePose.TryGetService<EntityManager>(out var manager)) {
-                        if(manager.TryGetEntity(new EntityId(_clientState.LocalPlayer), out var entity)) {
+                        if(manager.TryGetEntity(new EntityId(_objectTable.LocalPlayer), out var entity)) {
                             if(entity.TryGetCapability<PosingCapability>(out var posingCapability)) {
                                 manager.SetSelectedEntity(entity);
                                 posingCapability.OverlayOpen = true;

@@ -51,7 +51,7 @@ public unsafe class GPoseService : IDisposable
     private readonly Hook<GPoseEnterExitDelegate> _enterGPoseHook;
     private readonly Hook<ExitGPoseDelegate> _exitGPoseHook;
     
-    private readonly Hook<CharacterSetupContainer.Delegates.CopyFromCharacter> _copyFromCharacterHook;
+    // private readonly Hook<CharacterSetupContainer.Delegates.CopyFromCharacter> _copyFromCharacterHook;
 
     private readonly IFramework _framework;
     private readonly IClientState _clientState;
@@ -93,6 +93,7 @@ public unsafe class GPoseService : IDisposable
         _framework.Update += OnFrameworkUpdate;
     }
 
+    /*
     private ulong CopyFromCharacterDetour(CharacterSetupContainer* thisPtr, Character* source, CharacterSetupContainer.CopyFlags flags) {
         try {
             
@@ -106,6 +107,7 @@ public unsafe class GPoseService : IDisposable
             }
         }
     }
+    */
 
     private void OnCopyActor(Character* source, Character* destination) {
         if(source == null || source->ObjectIndex >= 200) return;

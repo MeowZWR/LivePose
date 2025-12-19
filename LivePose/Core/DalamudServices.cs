@@ -24,6 +24,7 @@ public class DalamudServices
     [PluginService] public ICondition Conditions { get; private set; } = null!;
     [PluginService] public IGameConfig GameConfig { get; private set; } = null!;
     [PluginService] public IGameGui GameGui { get; private set; } = null!;
+    [PluginService] public IPlayerState PlayerState { get; private set; } = null!;
 
 
     public DalamudServices(IDalamudPluginInterface pluginInterface)

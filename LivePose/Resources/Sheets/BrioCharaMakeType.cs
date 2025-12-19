@@ -16,6 +16,7 @@ namespace LivePose.Resources.Sheets;
 [Sheet("CharaMakeType", 0x80D7DB6D)]
 public unsafe struct BrioCharaMakeType(ExcelPage page, uint offset, uint row) : IExcelRow<BrioCharaMakeType>
 {
+    
     public const int MenuCount = 28;
     public const int SubMenuParamCount = 100;
     public const int SubMenuGraphicCount = 10;
@@ -23,6 +24,8 @@ public unsafe struct BrioCharaMakeType(ExcelPage page, uint offset, uint row) : 
     public const int FaceCount = 8;
     public const int FaceFeatureCount = 7;
 
+    public ExcelPage ExcelPage => page;
+    public uint RowOffset => offset;
     public readonly uint RowId => row;
 
     public readonly Collection<CharaMakeStructStruct> CharaMakeStruct => new(page, offset, offset, &CharaMakeStructCtor, 28);

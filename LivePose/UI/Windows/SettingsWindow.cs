@@ -30,14 +30,16 @@ public class SettingsWindow : Window
     private readonly ConfigurationService _configurationService;
     private readonly EntityManager _entityManager;
     private readonly IClientState _clientState;
+    private readonly IObjectTable _objectTable;
 
-    public SettingsWindow(ConfigurationService configurationService, EntityManager entityManager, IClientState clientState) : base($"{LivePose.Name} SETTINGS###livepose_settings_window", ImGuiWindowFlags.None)
+    public SettingsWindow(ConfigurationService configurationService, EntityManager entityManager, IClientState clientState, IObjectTable objectTable) : base($"{LivePose.Name} SETTINGS###livepose_settings_window", ImGuiWindowFlags.None)
     {
         Namespace = "livepose_settings_namespace";
 
         _configurationService = configurationService;
         _entityManager = entityManager;
         _clientState = clientState;
+        _objectTable = objectTable;
 
         Size = new Vector2(500, 550);
         SizeCondition = ImGuiCond.FirstUseEver;
@@ -229,7 +231,6 @@ public class SettingsWindow : Window
 
 
     private string newCategoryName = string.Empty;
-    private BoneCategoryTypes newCategoryType = BoneCategoryTypes.Exact;
     private string newBoneName = string.Empty;
 
     private BoneSearchControl boneSearchControl = new BoneSearchControl();
@@ -302,7 +303,7 @@ public class SettingsWindow : Window
                         }
 
 
-                        if(_clientState.LocalPlayer != null && _entityManager.TryGetEntity(new EntityId(_clientState.LocalPlayer), out var entity) && entity is ActorEntity actor && actor.TryGetCapability<PosingCapability>(out var posingCapability)) { 
+                        if(_objectTable.LocalPlayer != null && _entityManager.TryGetEntity(new EntityId(_objectTable.LocalPlayer), out var entity) && entity is ActorEntity actor && actor.TryGetCapability<PosingCapability>(out var posingCapability)) { 
                             if(ImGui.BeginCombo("##boneSearch", "", ImGuiComboFlags.NoPreview)) {
                                 var c = categories[i];
                                 if(ImGui.IsWindowAppearing()) {

@@ -25,7 +25,6 @@ namespace LivePose.Capabilities.Posing
         private readonly HeelsService _heelsService;
         private readonly ConfigurationService _configurationService;
         private readonly IpcService _ipcService;
-        private readonly ActorEntity _parent;
         
         public Skeleton? CharacterSkeleton { get; private set; }
         public Skeleton? MainHandSkeleton { get; private set; }

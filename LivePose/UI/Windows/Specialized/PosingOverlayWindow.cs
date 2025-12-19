@@ -35,6 +35,7 @@ public class PosingOverlayWindow : Window, IDisposable
     private readonly HistoryService _groupedUndoService;
     private readonly IClientState _clientState;
     private readonly ICondition _conditions;
+    private readonly IObjectTable _objectTable;
 
     private List<ClickableItem> _selectingFrom = [];
     private Transform? _trackingTransform;
@@ -44,7 +45,7 @@ public class PosingOverlayWindow : Window, IDisposable
     private const int _gizmoId = 142857;
     private const string _boneSelectPopupName = "livepose_bone_select_popup";
 
-    public PosingOverlayWindow(EntityManager entityManager, HistoryService groupedUndoService, ConfigurationService configService, PosingService posingService, GPoseService gPoseService, IClientState clientState, ICondition conditions)
+    public PosingOverlayWindow(EntityManager entityManager, HistoryService groupedUndoService, ConfigurationService configService, PosingService posingService, GPoseService gPoseService, IClientState clientState, ICondition conditions, IObjectTable objectTable)
         : base("##livepose_posing_overlay_window", ImGuiWindowFlags.AlwaysAutoResize, true)
     {
         Namespace = "livepose_posing_overlay_namespace";
@@ -57,6 +58,7 @@ public class PosingOverlayWindow : Window, IDisposable
         _groupedUndoService = groupedUndoService;
         _clientState = clientState;
         _conditions = conditions;
+        _objectTable = objectTable;
 
         _gPoseService.OnGPoseStateChange += OnGPoseStateChanged;
         ForceMainWindow = true;
@@ -64,8 +66,8 @@ public class PosingOverlayWindow : Window, IDisposable
 
     public override bool DrawConditions() {
         if(_clientState.IsGPosing) return false;
-        if(_clientState.LocalPlayer == null) return false;
-        if(_clientState.LocalPlayer.StatusFlags.HasFlag(StatusFlags.InCombat)) return false;
+        if(_objectTable.LocalPlayer == null) return false;
+        if(_objectTable.LocalPlayer.StatusFlags.HasFlag(StatusFlags.InCombat)) return false;
         if(_conditions.AnyUnsafe()) return false;
         if(!_entityManager.TryGetCapabilityFromSelectedEntity<PosingCapability>(out var posing)) {
             return false;

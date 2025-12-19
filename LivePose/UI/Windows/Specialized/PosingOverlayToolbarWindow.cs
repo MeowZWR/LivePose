@@ -37,6 +37,7 @@ public class PosingOverlayToolbarWindow : Window
     private readonly PosingGraphicalWindow _graphicalWindow;
     private readonly ICondition _conditions;
     private readonly TimelineIdentification _timelineIdentification;
+    private readonly IObjectTable _objectTable;
     
     private readonly BoneSearchControl _boneSearchControl = new();
 
@@ -45,7 +46,7 @@ public class PosingOverlayToolbarWindow : Window
 
     private const string _boneFilterPopupName = "livepose_bone_filter_popup";
 
-    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow, ICondition conditions, TimelineIdentification timelineIdentification) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
+    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow, ICondition conditions, TimelineIdentification timelineIdentification, IObjectTable objectTable) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
     {
         Namespace = "livepose_posing_overlay_toolbar_namespace";
 
@@ -58,6 +59,7 @@ public class PosingOverlayToolbarWindow : Window
         _graphicalWindow = graphicalWindow;
         _conditions = conditions;
         _timelineIdentification = timelineIdentification;
+        _objectTable = objectTable;
 
         TitleBarButtons =
         [
@@ -102,8 +104,8 @@ public class PosingOverlayToolbarWindow : Window
 
         if(posing.GameObject.ObjectIndex >= 2) return false;
         
-        if(_clientState.LocalPlayer == null) return false;
-        if(_clientState.LocalPlayer.StatusFlags.HasFlag(StatusFlags.InCombat)) return false;
+        if(_objectTable.LocalPlayer == null) return false;
+        if(_objectTable.LocalPlayer.StatusFlags.HasFlag(StatusFlags.InCombat)) return false;
         if(_conditions.AnyUnsafe()) return false;
 
         return base.DrawConditions();
@@ -353,7 +355,7 @@ public class PosingOverlayToolbarWindow : Window
                 }
                 
                 posing.SkeletonPosing.ResetPose();
-                posing.SkeletonPosing.ImportSkeletonPose(pose, new PoseImporterOptions(new BoneFilter(_posingService), TransformComponents.All, false));
+                posing.SkeletonPosing.ImportSkeletonPose(pose, new PoseImporterOptions(new BoneFilter(_posingService), TransformComponents.All));
             }
             
             var center = ImGui.GetItemRectMin() + ImGui.GetItemRectSize() / 2;
