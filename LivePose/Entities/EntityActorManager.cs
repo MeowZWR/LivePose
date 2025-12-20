@@ -124,6 +124,7 @@ public unsafe class EntityActorManager : IDisposable
                     if(maybeParentId < 0)
                         return;
 
+                    
                     var maybeParent = _objects[maybeParentId];
                     if(maybeParent == null)
                         return;

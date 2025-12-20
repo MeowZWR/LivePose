@@ -20,10 +20,11 @@ public class DalamudService : IDisposable
     private readonly IGameConfig _gameConfig;
     private readonly IDataManager _dataManager;
     private readonly IObjectTable _objectTable;
+    private readonly IPlayerState _playerState;
 
     private uint? _classJobId = 0;
 
-    public DalamudService(ICondition condition, IObjectTable gameObjects, IClientState clientState, IGameConfig gameConfig, IDataManager dataManager, IFramework framework)
+    public DalamudService(ICondition condition, IObjectTable gameObjects, IClientState clientState, IGameConfig gameConfig, IDataManager dataManager, IFramework framework, IPlayerState playerState)
     {
         _condition = condition;
         _clientState = clientState;
@@ -31,6 +32,7 @@ public class DalamudService : IDisposable
         _gameConfig = gameConfig;
         _dataManager = dataManager;
         _objectTable = gameObjects;
+        _playerState = playerState;
 
         IsWine = Util.IsWine();
 
@@ -55,7 +57,7 @@ public class DalamudService : IDisposable
             IsInCutscene = false;
         }
 
-        var localPlayer = _clientState.LocalPlayer;
+        var localPlayer = _objectTable.LocalPlayer;
         if(localPlayer != null)
         {
             _classJobId = localPlayer.ClassJob.RowId;
@@ -73,14 +75,13 @@ public class DalamudService : IDisposable
         return await RunOnFrameworkThread(GetHomeWorldId).ConfigureAwait(false);
     }
 
-    public uint GetHomeWorldId()
-    {
-        return _clientState.LocalPlayer?.HomeWorld.RowId ?? 0;
+    public uint GetHomeWorldId() {
+        return _playerState.HomeWorld.RowId;
     }
 
     public bool GetIsPlayerPresent()
     {
-        return _clientState.LocalPlayer != null && _clientState.LocalPlayer.IsValid();
+        return _objectTable.LocalPlayer != null && _objectTable.LocalPlayer.IsValid();
     }
 
     public async Task<bool> GetIsPlayerPresentAsync()
@@ -88,9 +89,8 @@ public class DalamudService : IDisposable
         return await RunOnFrameworkThread(GetIsPlayerPresent).ConfigureAwait(false);
     }
 
-    public string GetPlayerName()
-    {
-        return _clientState.LocalPlayer?.Name.ToString() ?? "--";
+    public string GetPlayerName() {
+        return _playerState.CharacterName;
     }
 
     public bool IsObjectPresent(IGameObject? obj)
@@ -114,7 +114,7 @@ public class DalamudService : IDisposable
     }
     public IPlayerCharacter GetPlayerCharacter()
     {
-        return _clientState.LocalPlayer!;
+        return _objectTable.LocalPlayer!;
     }
 
     public ICharacter? GetGposeCharacterFromObjectTableByName(string name, bool onlyGposeCharacters = false)

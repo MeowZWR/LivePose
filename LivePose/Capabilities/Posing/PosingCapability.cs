@@ -235,7 +235,7 @@ public class PosingCapability : ActorCharacterCapability
 
         if(asExpression == true)
         {
-            ImportPose_Internal(tempPose!, new PoseImporterOptions(new BoneFilter(_posingService), TransformComponents.All, false),
+            ImportPose_Internal(tempPose!, new PoseImporterOptions(new BoneFilter(_posingService), TransformComponents.All),
             generateSnapshot: true, expressionPhase2: true);
 
             return;
@@ -308,7 +308,7 @@ public class PosingCapability : ActorCharacterCapability
     {
         _framework.RunOnTick(() =>
         {
-            var all = new PoseImporterOptions(new BoneFilter(_posingService), TransformComponents.All, true);
+            var all = new PoseImporterOptions(new BoneFilter(_posingService), TransformComponents.All);
             var poseFile = GeneratePoseFile();
             if(reset)
             {

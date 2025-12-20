@@ -14,7 +14,7 @@ using Dalamud.Plugin.Services;
 
 namespace LivePose.Entities.Actor
 {
-    public class ActorEntity(IGameObject gameObject, IServiceProvider provider, IClientState clientState) : Entity(new EntityId(gameObject), provider)
+    public class ActorEntity(IGameObject gameObject, IServiceProvider provider, IPlayerState playerState) : Entity(new EntityId(gameObject), provider)
     {
         public readonly IGameObject GameObject = gameObject;
 
@@ -65,7 +65,7 @@ namespace LivePose.Entities.Actor
         public override void OnAttached()
         {
             if(GameObject is IPlayerCharacter { ObjectIndex: 0 } playerCharacter) {
-                CharacterConfiguration = _configService.GetCharacterConfiguration(clientState.LocalContentId);
+                CharacterConfiguration = _configService.GetCharacterConfiguration(playerState.ContentId);
                 CharacterConfiguration.Name = playerCharacter.Name.TextValue;
                 CharacterConfiguration.World = playerCharacter.HomeWorld.RowId;
                 CharacterConfiguration.Save();

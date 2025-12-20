@@ -38,15 +38,15 @@ public class PosingService : IDisposable
         }
         
 
-        DefaultImporterOptions = new PoseImporterOptions(new BoneFilter(this), TransformComponents.Rotation, false);
+        DefaultImporterOptions = new PoseImporterOptions(new BoneFilter(this), TransformComponents.Rotation);
         DefaultImporterOptions.BoneFilter.DisableCategory("weapon");
         DefaultImporterOptions.BoneFilter.DisableCategory("ex");
 
-        DefaultIPCImporterOptions = new PoseImporterOptions(new BoneFilter(this), TransformComponents.All, false);
+        DefaultIPCImporterOptions = new PoseImporterOptions(new BoneFilter(this), TransformComponents.All);
 
-        SceneImporterOptions = new PoseImporterOptions(new BoneFilter(this), TransformComponents.All, false);
+        SceneImporterOptions = new PoseImporterOptions(new BoneFilter(this), TransformComponents.All);
 
-        BodyOptions = new PoseImporterOptions(new BoneFilter(this), TransformComponents.Rotation | TransformComponents.Position, false);
+        BodyOptions = new PoseImporterOptions(new BoneFilter(this), TransformComponents.Rotation | TransformComponents.Position);
         BodyOptions.BoneFilter.DisableCategory("weapon");
         BodyOptions.BoneFilter.DisableCategory("head");
         BodyOptions.BoneFilter.DisableCategory("ears");
@@ -59,7 +59,7 @@ public class PosingService : IDisposable
         BodyOptions.BoneFilter.DisableCategory("legacy");
         BodyOptions.BoneFilter.DisableCategory("ex");
 
-        ExpressionOptions = new PoseImporterOptions(new BoneFilter(this), TransformComponents.All, false);
+        ExpressionOptions = new PoseImporterOptions(new BoneFilter(this), TransformComponents.All);
         ExpressionOptions.BoneFilter.DisableAll();
         ExpressionOptions.BoneFilter.EnableCategory("head");
         ExpressionOptions.BoneFilter.EnableCategory("ears");
@@ -69,13 +69,13 @@ public class PosingService : IDisposable
         ExpressionOptions.BoneFilter.EnableCategory("lips");
         ExpressionOptions.BoneFilter.EnableCategory("jaw");
 
-        ExpressionOptions2 = new PoseImporterOptions(new BoneFilter(this), TransformComponents.All, false);
+        ExpressionOptions2 = new PoseImporterOptions(new BoneFilter(this), TransformComponents.All);
         ExpressionOptions2.BoneFilter.DisableAll();
         ExpressionOptions2.BoneFilter.EnableCategory("head");
     }
 
-    public PoseImporterOptions GetNewPoseImporterOptions(TransformComponents transformComponents, bool applyModelTransform)
-        => new PoseImporterOptions(new BoneFilter(this), transformComponents, applyModelTransform);
+    public PoseImporterOptions GetNewPoseImporterOptions(TransformComponents transformComponents)
+        => new PoseImporterOptions(new BoneFilter(this), transformComponents);
 
     public void Dispose() { 
         BoneCategories.Dispose();

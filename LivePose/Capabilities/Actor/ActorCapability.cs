@@ -23,7 +23,7 @@ public abstract class ActorCharacterCapability(ActorEntity parent) : ActorCapabi
     
     public unsafe Character*  NativeCharacter => (Character*)Character.Address;
 
-    public CharacterConfiguration CharacterConfiguration => parent.CharacterConfiguration;
+    public CharacterConfiguration CharacterConfiguration => Actor.CharacterConfiguration;
     
     
     public unsafe bool IsReady {

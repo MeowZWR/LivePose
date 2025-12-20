@@ -13,6 +13,8 @@ namespace LivePose.Resources.Sheets;
 [Sheet("ActionTimeline", 0xD803699F)]
 readonly public struct BrioActionTimeline(ExcelPage page, uint offset, uint row) : IExcelRow<BrioActionTimeline>
 {
+    public ExcelPage ExcelPage => page;
+    public uint RowOffset => offset;
     public uint RowId => row;
 
     public readonly ReadOnlySeString Key => page.ReadString(offset, offset);
@@ -39,4 +41,7 @@ readonly public struct BrioActionTimeline(ExcelPage page, uint offset, uint row)
 
     static BrioActionTimeline IExcelRow<BrioActionTimeline>.Create(ExcelPage page, uint offset, uint row) =>
         new(page, offset, row);
+
+
+    
 }

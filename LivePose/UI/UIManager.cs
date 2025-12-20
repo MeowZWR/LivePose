@@ -92,10 +92,6 @@ public class UIManager : IDisposable
         _windowSystem.AddWindow(_debugWindow);
 
         _pluginInterface.UiBuilder.Draw += DrawUI;
-
-        if(LivePose.IsPlugin) {
-            _pluginInterface.UiBuilder.OpenConfigUi += ShowSettingsWindow;
-        }
         
 #if DEBUG
         _debugWindow.IsOpen = true;

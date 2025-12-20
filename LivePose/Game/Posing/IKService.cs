@@ -1,5 +1,4 @@
-﻿using Dalamud.Game;
-using FFXIVClientStructs.Havok.Animation.Rig;
+﻿using FFXIVClientStructs.Havok.Animation.Rig;
 using FFXIVClientStructs.Havok.Common.Base.Container.Array;
 using FFXIVClientStructs.Havok.Common.Base.Math.Vector;
 using LivePose.Core;
@@ -8,6 +7,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using Dalamud.Plugin.Services;
 
 namespace LivePose.Game.Posing;
 public unsafe class IKService : IDisposable
