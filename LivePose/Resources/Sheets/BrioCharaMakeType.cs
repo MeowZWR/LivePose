@@ -1,4 +1,4 @@
-
+﻿
 //
 // Some code in this file was generated and is from the Lumina.Excel project (https://github.com/NotAdam/Lumina.Excel)
 // (Lumina.Excel.Sheets.CharaMakeType)
@@ -24,9 +24,6 @@ public unsafe struct BrioCharaMakeType(ExcelPage page, uint offset, uint row) : 
     public const int FaceFeatureCount = 7;
 
     public readonly uint RowId => row;
-
-    public ExcelPage ExcelPage => page;
-    public uint RowOffset => offset;
 
     public readonly Collection<CharaMakeStructStruct> CharaMakeStruct => new(page, offset, offset, &CharaMakeStructCtor, 28);
     public readonly Collection<byte> VoiceStruct => new(page, offset, offset, &VoiceStructCtor, 12);

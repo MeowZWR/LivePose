@@ -1,5 +1,4 @@
 ﻿using Dalamud.Game;
-using Dalamud.Plugin.Services;
 using FFXIVClientStructs.Havok.Animation.Rig;
 using FFXIVClientStructs.Havok.Common.Base.Container.Array;
 using FFXIVClientStructs.Havok.Common.Base.Math.Vector;
