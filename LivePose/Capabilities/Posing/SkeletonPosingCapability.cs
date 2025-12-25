@@ -31,11 +31,12 @@ namespace LivePose.Capabilities.Posing
         public Skeleton? OffHandSkeleton { get; private set; }
         
         public Skeleton? OrnamentSkeleton { get; private set; }
+        public Skeleton? MinionSkeleton { get; private set; }
 
         public bool CharacterHasTail { get; private set; }
         public bool CharacterIsIVCS { get; private set; }
 
-        public IReadOnlyList<(Skeleton Skeleton, PoseInfoSlot Slot)> Skeletons => [.. new[] { (CharacterSkeleton, PoseInfoSlot.Character), (MainHandSkeleton, PoseInfoSlot.MainHand), (OffHandSkeleton, PoseInfoSlot.OffHand), (OrnamentSkeleton, PoseInfoSlot.Ornament) }.Where(s => s.Item1 != null).Cast<(Skeleton Skeleton, PoseInfoSlot Slot)>()];
+        public IReadOnlyList<(Skeleton Skeleton, PoseInfoSlot Slot)> Skeletons => [.. new[] { (CharacterSkeleton, PoseInfoSlot.Character), (MainHandSkeleton, PoseInfoSlot.MainHand), (OffHandSkeleton, PoseInfoSlot.OffHand), (OrnamentSkeleton, PoseInfoSlot.Ornament), (MinionSkeleton, PoseInfoSlot.Minion) }.Where(s => s.Item1 != null).Cast<(Skeleton Skeleton, PoseInfoSlot Slot)>()];
 
         public PoseInfo PoseInfo { get; set; } = new PoseInfo();
 
@@ -147,6 +148,14 @@ namespace LivePose.Capabilities.Posing
                     poseFile.Ornament[bone.Name] = bone.LastRawTransform;
                 }
             }
+            
+            var minionSkeleton = MinionSkeleton;
+            if(minionSkeleton != null) {
+                foreach(var bone in minionSkeleton.Bones) {
+                    if (bone.IsPartialRoot && !bone.IsSkeletonRoot) continue;
+                    poseFile.Companion[bone.Name] = bone.LastRawTransform;
+                }
+            }
         }
 
         public unsafe BonePoseInfo GetBonePose(BonePoseInfoId bone)
@@ -174,6 +183,10 @@ namespace LivePose.Capabilities.Posing
             if(OrnamentSkeleton != null && OrnamentSkeleton == bone.Skeleton) {
                 return PoseInfo.GetPoseInfo(bone, PoseInfoSlot.Ornament);
             }
+
+            if(MinionSkeleton != null && MinionSkeleton == bone.Skeleton) {
+                return PoseInfo.GetPoseInfo(bone, PoseInfoSlot.Minion);
+            }
             
             return PoseInfo.GetPoseInfo(bone, PoseInfoSlot.Unknown);
         }
@@ -189,6 +202,7 @@ namespace LivePose.Capabilities.Posing
                 PoseInfoSlot.MainHand => MainHandSkeleton?.Partials.ElementAtOrDefault(id.Value.Partial)?.GetBone(id.Value.BoneName),
                 PoseInfoSlot.OffHand => OffHandSkeleton?.Partials.ElementAtOrDefault(id.Value.Partial)?.GetBone(id.Value.BoneName),
                 PoseInfoSlot.Ornament => OrnamentSkeleton?.Partials.ElementAtOrDefault(id.Value.Partial)?.GetBone(id.Value.BoneName),
+                PoseInfoSlot.Minion => MinionSkeleton?.Partials.ElementAtOrDefault(id.Value.Partial)?.GetBone(id.Value.BoneName),
                 _ => null,
             };
         }
@@ -201,6 +215,7 @@ namespace LivePose.Capabilities.Posing
                 PoseInfoSlot.MainHand => MainHandSkeleton?.GetFirstVisibleBone(name),
                 PoseInfoSlot.OffHand => OffHandSkeleton?.GetFirstVisibleBone(name),
                 PoseInfoSlot.Ornament => OrnamentSkeleton?.GetFirstVisibleBone(name),
+                PoseInfoSlot.Minion => MinionSkeleton?.GetFirstVisibleBone(name),
                 _ => null,
             };
         }
@@ -296,11 +311,13 @@ namespace LivePose.Capabilities.Posing
             MainHandSkeleton = _skeletonService.GetSkeleton(Character.GetWeaponCharacterBase(ActorEquipSlot.MainHand));
             OffHandSkeleton = _skeletonService.GetSkeleton(Character.GetWeaponCharacterBase(ActorEquipSlot.OffHand));
             OrnamentSkeleton = _skeletonService.GetSkeleton(Character.GetOrnamentBase());
+            MinionSkeleton = _skeletonService.GetSkeleton(Character.GetMinionBase());
 
             _skeletonService.RegisterForFrameUpdate(CharacterSkeleton, this);
             _skeletonService.RegisterForFrameUpdate(MainHandSkeleton, this);
             _skeletonService.RegisterForFrameUpdate(OffHandSkeleton, this);
             _skeletonService.RegisterForFrameUpdate(OrnamentSkeleton, this);
+            _skeletonService.RegisterForFrameUpdate(MinionSkeleton, this);
 
             CharacterHasTail = CharacterSkeleton?.GetFirstVisibleBone("n_sippo_a") != null;
             CharacterIsIVCS = CharacterSkeleton?.GetFirstVisibleBone("iv_ko_c_l") != null;

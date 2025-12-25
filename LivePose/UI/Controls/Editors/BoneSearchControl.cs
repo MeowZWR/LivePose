@@ -79,6 +79,14 @@ public class BoneSearchControl
                                     }
                                 }
                             }
+
+                            if(posing.SkeletonPosing.MinionSkeleton != null) {
+                                using(var skeleton = ImRaii.TreeNode("Minion", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.OpenOnDoubleClick)) {
+                                    if(skeleton.Success) {
+                                        DrawBone(posing.SkeletonPosing.MinionSkeleton.RootBone, posing, PoseInfoSlot.Minion, onClick);
+                                    }
+                                }
+                            }
                         }
                     }
                 }

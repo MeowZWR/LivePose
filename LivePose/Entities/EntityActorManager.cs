@@ -70,6 +70,7 @@ public unsafe class EntityActorManager : IDisposable
                 return;
 
             if(go.ObjectKind == ObjectKind.Ornament) return;
+            if(go.ObjectKind == ObjectKind.Companion) return;
             
             
             // TODO: We should allow manipulation of overworld actors too

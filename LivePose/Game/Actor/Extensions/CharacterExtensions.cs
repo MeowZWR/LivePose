@@ -127,6 +127,12 @@ public static class CharacterExtensions
         if(ornament == null) return null;
         return (BrioCharacterBase*)ornament->DrawObject;
     }
+    
+    public static unsafe BrioCharacterBase* GetMinionBase(this ICharacter go) {
+        var companion = go.Native()->CompanionData.CompanionObject;
+        if(companion == null) return null;
+        return (BrioCharacterBase*)companion->DrawObject;
+    }
 
     public static unsafe BrioHuman* GetHuman(this ICharacter go)
     {
