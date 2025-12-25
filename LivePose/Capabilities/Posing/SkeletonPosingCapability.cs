@@ -43,7 +43,11 @@ namespace LivePose.Capabilities.Posing
         public Dictionary<(ushort, ushort), PoseInfo> BodyPoses { get; } = [];
         public Dictionary<ushort, PoseInfo> FacePoses { get; } = [];
 
+        public Dictionary<uint, PoseInfo> MinionPoses { get; } = [];
+
         private readonly List<Action<Bone, BonePoseInfo>> _transitiveActions = [];
+
+        public uint ActiveMinion = 0;
 
         public SkeletonPosingCapability(ActorEntity parent, SkeletonService skeletonService, PosingService posingService, HeelsService heelsService, IFramework framework, ConfigurationService configurationService, IpcService ipcService) : base(parent)
         {
@@ -257,6 +261,20 @@ namespace LivePose.Capabilities.Posing
                 PoseInfo.Overlay(facePose, FilterFaceBones);
             }
         }
+
+        public unsafe void ApplyMinionPose() {
+            var chr = (Character*)Character.Address;
+            var minionObj = chr->CompanionObject;
+            ApplyMinionPose(minionObj == null ? 0 : minionObj->BaseId);
+        }
+        
+        private void ApplyMinionPose(uint id) {
+            PoseInfo.Clear(b => b.Slot == PoseInfoSlot.Minion);
+            ActiveMinion = id;
+            if(MinionPoses.TryGetValue(id, out var minionPose)) {
+                PoseInfo.Overlay(minionPose, b => b.Slot == PoseInfoSlot.Minion);
+            }
+        }
         
         public void UpdatePoseCache(bool announceToHeels = false) {
             if(CursedMode) return;
@@ -269,6 +287,15 @@ namespace LivePose.Capabilities.Posing
                     FacePoses[ActiveFaceTimeline] = PoseInfo.Clone(FilterFaceBones);
                 } else {
                     FacePoses.Remove(ActiveFaceTimeline);
+                }
+                
+                if(ActiveMinion != 0) {
+                    var minionPose = PoseInfo.Clone(b => b.Slot == PoseInfoSlot.Minion);
+                    if(minionPose.IsOverridden()) {
+                        MinionPoses[ActiveMinion] = PoseInfo.Clone(b => b.Slot == PoseInfoSlot.Minion);
+                    } else {
+                        MinionPoses.Remove(ActiveMinion);
+                    }
                 }
                     
                 if(ActiveBodyTimelines != (0, 0)) {
@@ -297,13 +324,20 @@ namespace LivePose.Capabilities.Posing
                 var currentBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(0);
                 var currentUpperBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(1);
                 var currentFacePose =  chr->Timeline.TimelineSequencer.GetSlotTimeline(2);
-
-                if(ActiveBodyTimelines != (currentBodyPose, currentUpperBodyPose) || currentFacePose != ActiveFaceTimeline) {
+                
+                var minionObj = chr->CompanionObject;
+                var minion = 0U;
+                if(minionObj != null) {
+                    minion = minionObj->BaseId;
+                }
+                
+                if(ActiveBodyTimelines != (currentBodyPose, currentUpperBodyPose) || currentFacePose != ActiveFaceTimeline || ActiveMinion != minion) {
                     if (chr->ObjectIndex == 0) {
                         UpdatePoseCache();
                     }
 
                     ApplyTimelinePose(currentBodyPose, currentUpperBodyPose, currentFacePose);
+                    ApplyMinionPose(minion);
                 }
             }
 
@@ -357,6 +391,7 @@ namespace LivePose.Capabilities.Posing
             if(CharacterConfiguration is not NoCharacterConfiguration) {
                 BodyPoses.Clear();
                 FacePoses.Clear();
+                MinionPoses.Clear();
                 foreach(var pose in CharacterConfiguration.BodyPoses) {
                     BodyPoses[(pose.TimelineId, pose.SecondaryTimelineId)] = _ipcService.DeserializePose(pose.Pose);
                 }
@@ -364,8 +399,13 @@ namespace LivePose.Capabilities.Posing
                 foreach(var pose in CharacterConfiguration.FacePoses) {
                     FacePoses[pose.TimelineId] = _ipcService.DeserializePose(pose.Pose);
                 }
+
+                foreach(var pose in CharacterConfiguration.MinionPoses) {
+                    MinionPoses[pose.Minion] = _ipcService.DeserializePose(pose.Pose);
+                }
                 
                 ApplyTimelinePose();
+                ApplyMinionPose();
             }
         }
         
@@ -375,6 +415,7 @@ namespace LivePose.Capabilities.Posing
             
             var bodyPoses = new List<LivePoseCacheEntry>();
             var facePoses = new List<LivePoseCacheEntry>();
+            var minionPoses = new List<LivePoseMinionEntry>();
             
             foreach(var (key, p) in BodyPoses) {
                 var pose = _ipcService.SerializePose(this, p);
@@ -389,8 +430,16 @@ namespace LivePose.Capabilities.Posing
                     facePoses.Add(new LivePoseCacheEntry(key, pose));
             }
 
+            foreach(var (id, p) in MinionPoses) {
+                var pose = _ipcService.SerializePose(this, p);
+                if(pose.Count > 0) {
+                    minionPoses.Add(new LivePoseMinionEntry(id, pose));
+                }
+            }
+
             CharacterConfiguration.BodyPoses = bodyPoses;
             CharacterConfiguration.FacePoses = facePoses;
+            CharacterConfiguration.MinionPoses = minionPoses;
             CharacterConfiguration.Save();
         }
         

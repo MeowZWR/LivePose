@@ -10,10 +10,11 @@ using LivePose.Entities.Actor;
 using LivePose.IPC;
 using LivePose.Resources;
 using Lumina.Excel.Sheets;
+using Companion = Lumina.Excel.Sheets.Companion;
 
 namespace LivePose.UI.Windows;
 
-public unsafe class DebugWindow(TimelineIdentification timelineIdentification, IpcService ipcService) : Window($"{LivePose.Name} Debug") {
+public unsafe class DebugWindow(TimelineIdentification timelineIdentification, IpcService ipcService, IDataManager dataManager) : Window($"{LivePose.Name} Debug") {
     private void ShowEntity(ActorEntity actorEntity) {
         if(actorEntity.TryGetCapability<SkeletonPosingCapability>(out var skeletonPosingCapability)) {
             ImCallback.TreeNode("Skeleton Posing", () => {
@@ -41,6 +42,19 @@ public unsafe class DebugWindow(TimelineIdentification timelineIdentification, I
                     ImCallback.TreeNode("Face Poses", () => {
                         foreach(var (timeline, pose) in skeletonPosingCapability.FacePoses) {
                             ImCallback.TreeNode($"Face Pose [{timeline}] ({timelineIdentification.GetExpressionName(timeline)})", () => {
+                                foreach(var (b, sc) in pose.StackCounts) {
+                                    ImGui.Text($"{Localize.GetNullable($"bones.{b.BoneName}")}({b.BoneName})[{b.Slot}/{b.Partial}]: {sc}");
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                if(skeletonPosingCapability.MinionPoses.Count > 0) {
+                    ImCallback.TreeNode("Minion Poses", () => {
+                        foreach(var (minionId, pose) in skeletonPosingCapability.MinionPoses) {
+                            var minion = dataManager.GetExcelSheet<Companion>().GetRowOrDefault(minionId);
+                            ImCallback.TreeNode($"Minion {minionId} ({minion?.Singular ?? $"Companion#{minionId}"})", () => {
                                 foreach(var (b, sc) in pose.StackCounts) {
                                     ImGui.Text($"{Localize.GetNullable($"bones.{b.BoneName}")}({b.BoneName})[{b.Slot}/{b.Partial}]: {sc}");
                                 }

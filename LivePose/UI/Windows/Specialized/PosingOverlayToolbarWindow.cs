@@ -23,6 +23,7 @@ using LivePose.Capabilities.Actor;
 using LivePose.Files;
 using LivePose.IPC;
 using LivePose.Resources;
+using Lumina.Excel.Sheets;
 
 namespace LivePose.UI.Windows.Specialized;
 
@@ -38,6 +39,7 @@ public class PosingOverlayToolbarWindow : Window
     private readonly ICondition _conditions;
     private readonly TimelineIdentification _timelineIdentification;
     private readonly IObjectTable _objectTable;
+    private readonly IDataManager _dataManager;
     
     private readonly BoneSearchControl _boneSearchControl = new();
 
@@ -46,7 +48,7 @@ public class PosingOverlayToolbarWindow : Window
 
     private const string _boneFilterPopupName = "livepose_bone_filter_popup";
 
-    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow, ICondition conditions, TimelineIdentification timelineIdentification, IObjectTable objectTable) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
+    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow, ICondition conditions, TimelineIdentification timelineIdentification, IObjectTable objectTable, IDataManager dataManager) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
     {
         Namespace = "livepose_posing_overlay_toolbar_namespace";
 
@@ -60,6 +62,7 @@ public class PosingOverlayToolbarWindow : Window
         _conditions = conditions;
         _timelineIdentification = timelineIdentification;
         _objectTable = objectTable;
+        _dataManager = dataManager;
 
         TitleBarButtons =
         [
@@ -399,11 +402,13 @@ public class PosingOverlayToolbarWindow : Window
 
             if(ImGui.IsItemHovered())
                 ImGui.SetTooltip($"Animation Speed Control");
-
         }
 
         ImGui.Separator();
 
+        ImGui.Dummy(new Vector2(buttonOperationSize));
+        ImGui.SameLine();
+        
         using(ImRaii.PushFont(UiBuilder.IconFont))
         {
             using(ImRaii.Disabled(!posing.CanUndo))
@@ -432,13 +437,13 @@ public class PosingOverlayToolbarWindow : Window
         if(ImGui.IsItemHovered())
             ImGui.SetTooltip("Redo");
 
-        ImGui.SameLine();
+        ImGui.Separator();
 
         using(ImRaii.PushFont(UiBuilder.IconFont))
         {
             using(ImRaii.Disabled(!posing.HasOverride(posing.SkeletonPosing.FilterNonFaceBones)))
             {
-                if(ImGui.Button($"{FontAwesomeIcon.Undo.ToIconString()}###reset_body_pose", new Vector2(buttonOperationSize))) {
+                if(ImGui.Button($"{FontAwesomeIcon.Undo.ToIconString()}###reset_body_pose", new Vector2(buttonSize))) {
                     posing.Snapshot(false, reconcile: false);
                     posing.SkeletonPosing.PoseInfo.Clear(posing.SkeletonPosing.FilterNonFaceBones);
                     if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
@@ -464,7 +469,7 @@ public class PosingOverlayToolbarWindow : Window
         {
             using(ImRaii.Disabled(!posing.HasOverride(posing.SkeletonPosing.FilterFaceBones)))
             {
-                if(ImGui.Button($"{FontAwesomeIcon.Undo.ToIconString()}###reset_face_pose", new Vector2(buttonOperationSize))) {
+                if(ImGui.Button($"{FontAwesomeIcon.Undo.ToIconString()}###reset_face_pose", new Vector2(buttonSize))) {
                     posing.Snapshot(false, reconcile: false);
                     posing.SkeletonPosing.PoseInfo.Clear(posing.SkeletonPosing.FilterFaceBones);
                     if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
@@ -484,6 +489,32 @@ public class PosingOverlayToolbarWindow : Window
                 ImGui.TextDisabled($"Will reset pose for:\n\t{_timelineIdentification.GetExpressionName(posing.SkeletonPosing.ActiveFaceTimeline)}");
             }
         
+        ImGui.SameLine();
+
+        
+        using(ImRaii.PushFont(UiBuilder.IconFont))
+        {
+            using(ImRaii.Disabled(!posing.HasOverride(b => b.Slot == PoseInfoSlot.Minion)))
+            {
+                if(ImGui.Button($"{FontAwesomeIcon.Undo.ToIconString()}###reset_minion_pose", new Vector2(buttonSize))) {
+                    posing.Snapshot(false, reconcile: false);
+                    posing.SkeletonPosing.PoseInfo.Clear(b => b.Slot == PoseInfoSlot.Minion);
+                    if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
+                        heelsService.SetPlayerPoseTag();
+                    }
+                }
+                
+                ImGui.GetWindowDrawList().AddText(ImGui.GetItemRectMin() + ImGui.GetItemRectSize() / 2, ImGui.GetColorU32(ImGuiCol.Text), FontAwesomeIcon.Paw.ToIconString());
+                
+            }
+        }
+        
+        if(ImGui.IsItemHovered() && _dataManager.GetExcelSheet<Companion>().TryGetRow(posing.SkeletonPosing.ActiveMinion, out var activeMinion))
+            using(ImRaii.Tooltip()) {
+                ImGui.Text("Reset Minion Pose");
+                ImGui.Separator();
+                ImGui.TextDisabled($"Will reset pose for:\n\t{activeMinion.Singular}");
+            }
         
         if(!_configurationService.Configuration.Posing.CursedMode) {
             ImGui.Separator();
