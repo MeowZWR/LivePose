@@ -72,6 +72,17 @@ public class PoseImporter(PoseFile poseFile, PoseImporterOptions options, bool e
                 }
             }
         }
+        
+        if(poseInfo.Slot == PoseInfoSlot.Minion) {
+            var isAllowed = options.BoneFilter.MinionsAllowed;
+            if(isAllowed == true)
+            {
+                if(poseFile.Companion.TryGetValue(bone.Name, out var fileBone))
+                {
+                    poseInfo.Apply(fileBone, bone.LastRawTransform, TransformComponents.All, options.TransformComponents, BoneIKInfo.Disabled, PoseMirrorMode.None, true);
+                }
+            }
+        }
     }
 }
 

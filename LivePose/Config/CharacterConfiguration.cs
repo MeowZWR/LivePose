@@ -18,6 +18,8 @@ public class CharacterConfiguration {
     
     public List<LivePoseCacheEntry> FacePoses { get; set; } = [];
     
+    public List<LivePoseMinionEntry> MinionPoses { get; set; } = [];
+    
     public void Save() {
         if(!LivePose.TryGetService(out ConfigurationService configurationService)) {
             LivePose.Log.Error("Failed to get ConfigurationService");

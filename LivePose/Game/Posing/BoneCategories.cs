@@ -36,7 +36,7 @@ public class BoneCategories : IDisposable
             var boneCategoryFile = ResourceProvider.Instance.GetResourceDocument<BoneCategoryFile>("Data.BoneCategories.json");
             foreach(var (id, entry) in boneCategoryFile.Categories)
             {
-                if (id is "weapon" or "ornament" or "other") continue;
+                if (id is "weapon" or "ornament" or "companion" or "other") continue;
                 var name = Localize.Get($"bone_categories.{id}", id);
                 var category = new BoneCategory(id, name, entry.Type, entry.Bones);
                 categories.Add(category);
@@ -49,12 +49,13 @@ public class BoneCategories : IDisposable
 
 
         foreach(var category in categories) {
-            if (category.Id is "weapon" or "ornament" or "other") continue;
+            if (category.Id is "weapon" or "ornament" or "other" or "companion") continue;
             _categories.Add(category);
         }
         
         _categories.Add(new BoneCategory("weapon", Localize.Get("bone_categories.weapon", "Weapons"), BoneCategoryTypes.Filter, []));
         _categories.Add(new BoneCategory("ornament", Localize.Get("bone_categories.ornament", "Ornaments"), BoneCategoryTypes.Filter, []));
+        _categories.Add(new BoneCategory("companion", Localize.Get("bone_categories.companion", "Minions"), BoneCategoryTypes.Filter, []));
         _categories.Add(new BoneCategory("other", Localize.Get("bone_categories.other", "Other"), BoneCategoryTypes.Filter, []));
     }
 

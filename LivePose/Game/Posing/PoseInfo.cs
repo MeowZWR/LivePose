@@ -222,6 +222,7 @@ public enum PoseInfoSlot
     OffHand,
     Prop,
     Ornament,
+    Minion,
     Unknown
 }
 

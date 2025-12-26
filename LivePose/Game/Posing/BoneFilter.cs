@@ -57,6 +57,10 @@ public class BoneFilter {
             return OrnamentsAllowed && bone.Name != "n_root";
         }
 
+        if(slot == PoseInfoSlot.Minion) {
+            return MinionsAllowed && bone.Name != "n_root";
+        }
+
         if(boneValidCache.TryGetValue(bone.Name, out var valid)) return valid;
         boneValidCache[bone.Name] = true;
 
@@ -97,6 +101,7 @@ public class BoneFilter {
     public bool WeaponsAllowed => _allowedCategories.Any((x) => x == "weapon");
     
     public bool OrnamentsAllowed => _allowedCategories.Any((x) => x == "ornament");
+    public bool MinionsAllowed => _allowedCategories.Any((x) => x == "companion");
 
     public bool OtherAllowed => _allowedCategories.Any((x) => x == "other");
 

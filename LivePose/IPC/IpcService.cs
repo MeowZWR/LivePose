@@ -183,6 +183,13 @@ public class IpcService : IDisposable
                 if(pose.Count > 0)
                     data.FacePoses.Add(new LivePoseCacheEntry(key, pose));
             }
+
+            foreach(var (id, p) in skeletonPosingCapability.MinionPoses) {
+                var pose = SerializePose(skeletonPosingCapability, p);
+                if(pose.Count > 0) {
+                    data.MinionPoses.Add(new LivePoseMinionEntry(id, pose));
+                }
+            }
         }
 
         data.AnimationSpeedMultiplier = timelineCapability.SpeedMultiplierOverride;
@@ -242,6 +249,7 @@ public class IpcService : IDisposable
             } else {
                 skeletonPosingCapability.BodyPoses.Clear();
                 skeletonPosingCapability.FacePoses.Clear();
+                skeletonPosingCapability.MinionPoses.Clear();
                 foreach(var pose in livePoseData.BodyPoses) {
                     skeletonPosingCapability.BodyPoses[(pose.TimelineId, pose.SecondaryTimelineId)] = DeserializePose(pose.Pose);
                 }
@@ -249,8 +257,13 @@ public class IpcService : IDisposable
                 foreach(var pose in livePoseData.FacePoses) {
                     skeletonPosingCapability.FacePoses[pose.TimelineId] = DeserializePose(pose.Pose);
                 }
+
+                foreach(var pose in livePoseData.MinionPoses) {
+                    skeletonPosingCapability.MinionPoses[pose.Minion] = DeserializePose(pose.Pose);
+                }
                 
                 skeletonPosingCapability.ApplyTimelinePose();
+                skeletonPosingCapability.ApplyMinionPose();
             }
             
             if(livePoseData.Frozen) {
