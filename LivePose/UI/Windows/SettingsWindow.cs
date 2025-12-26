@@ -220,6 +220,15 @@ public class SettingsWindow : Window
             }
             
             
+            var brioCopy = _configurationService.Configuration.Posing.CopyPoseToBrio;
+            if(ImGui.Checkbox("Copy to Brio", ref brioCopy)) {
+                _configurationService.Configuration.Posing.CopyPoseToBrio = brioCopy;
+                _configurationService.ApplyChange();
+            }
+            
+            ImGui.SameLine();
+            ImGuiComponents.HelpMarker("When entering GPose, LivePose will attempt to copy its state to Brio. Actors will be frozen and their current pose will be applied.\n\nPlease note that Animation is not supported on copied poses and will likely break if characters are unfrozen.");
+            
             var undoStackSize = _configurationService.Configuration.Posing.UndoStackSize;
             if(ImGui.DragInt("Undo History", ref undoStackSize, 1, 0, 100))
             {

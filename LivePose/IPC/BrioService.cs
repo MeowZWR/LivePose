@@ -1,42 +1,58 @@
-﻿using Dalamud.Game.ClientState.Objects.Types;
+﻿using Brio.API;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc;
 using Dalamud.Plugin.Services;
+using LivePose.Core;
 
 namespace LivePose.IPC;
 
 public class BrioService : BrioIPC {
     public override string Name => "Brio";
-    public override int APIMajor => 2;
+    public override int APIMajor => 3;
     public override int APIMinor => 0;
 
     public override bool IsAvailable => CheckStatus() == IPCStatus.Available;
     public override bool AllowIntegration => true;
 
     private readonly IDalamudPluginInterface _pluginInterface;
+
+    private ApiVersion _apiVersion;
+    private LoadPoseFromJson _loadPoseFromJson;
+    private FreezeActor _freezeActor;
+    private IsValidGPoseSession _isValidGPoseSession;
+    private SetModelTransform _setModelTransform;
     
-    public const string ApiVersion_IPCName = "Brio.ApiVersion";
-    private readonly ICallGateSubscriber<(int, int)> API_Version_IPC;
-    
-    public const string Actor_PoseLoadFromJson_IPCName = "Brio.Actor.Pose.LoadFromJson";
-    private readonly ICallGateSubscriber<IGameObject, string, bool, bool> Actor_Pose_LoadFromJson_IPC;
 
 
     public BrioService(IDalamudPluginInterface pluginInterface) {
         _pluginInterface = pluginInterface;
-        API_Version_IPC = pluginInterface.GetIpcSubscriber<(int, int)>(ApiVersion_IPCName);
-        Actor_Pose_LoadFromJson_IPC = pluginInterface.GetIpcSubscriber<IGameObject, string, bool, bool>(Actor_PoseLoadFromJson_IPCName);
+
+        _apiVersion = new ApiVersion(pluginInterface);
+        _loadPoseFromJson = new LoadPoseFromJson(pluginInterface);
+        _freezeActor = new FreezeActor(pluginInterface);
+        _isValidGPoseSession = new IsValidGPoseSession(pluginInterface);
+        _setModelTransform = new SetModelTransform(pluginInterface);
     }
 
 
-    public bool SetPose(IGameObject obj, string json, bool legacy = false) {
+    public bool SetPose(IGameObject? obj, string json) {
+        if(obj == null) return false;
         if(!IsAvailable) return false;
-        return Actor_Pose_LoadFromJson_IPC.InvokeFunc(obj, json, legacy);
+        return _loadPoseFromJson.Invoke(obj, json);
     }
 
-
+    public bool SetModelTransform(IGameObject? obj, Transform? transform) {
+        if(obj == null) return false;
+        if(transform == null) return false;
+        if(!IsAvailable) return false;
+        return _setModelTransform.Invoke(obj, transform?.Position, transform?.Rotation, transform?.Scale);
+    }
     
-    public override (int Major, int Minor) GetAPIVersion() => API_Version_IPC.InvokeFunc();
+    public bool IsValidGposeSession() => _isValidGPoseSession.Invoke();
+    public bool FreezeActor(IGameObject obj) => _freezeActor.Invoke(obj);
+
+    public override (int Major, int Minor) GetAPIVersion() => _apiVersion.Invoke();
 
     public override IDalamudPluginInterface GetPluginInterface() => _pluginInterface;
     

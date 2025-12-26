@@ -12,6 +12,7 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using LivePose.Capabilities.Posing;
+using LivePose.Core;
 using LivePose.Entities;
 using LivePose.Entities.Core;
 using LivePose.IPC;
@@ -51,7 +52,7 @@ public unsafe class GPoseService : IDisposable
     private readonly Hook<GPoseEnterExitDelegate> _enterGPoseHook;
     private readonly Hook<ExitGPoseDelegate> _exitGPoseHook;
     
-    // private readonly Hook<CharacterSetupContainer.Delegates.CopyFromCharacter> _copyFromCharacterHook;
+    private readonly Hook<CharacterSetupContainer.Delegates.CopyFromCharacter> _copyFromCharacterHook;
 
     private readonly IFramework _framework;
     private readonly IClientState _clientState;
@@ -87,27 +88,28 @@ public unsafe class GPoseService : IDisposable
         _exitGPoseHook = interopProvider.HookFromAddress<ExitGPoseDelegate>(exitGPoseAddress, ExitingGPoseDetour);
         _exitGPoseHook.Enable();
 
-        // _copyFromCharacterHook = interopProvider.HookFromAddress<CharacterSetupContainer.Delegates.CopyFromCharacter>(CharacterSetupContainer.Addresses.CopyFromCharacter.Value, CopyFromCharacterDetour);
-        // _copyFromCharacterHook.Enable();
+        _copyFromCharacterHook = interopProvider.HookFromAddress<CharacterSetupContainer.Delegates.CopyFromCharacter>(CharacterSetupContainer.Addresses.CopyFromCharacter.Value, CopyFromCharacterDetour);
+        _copyFromCharacterHook.Enable();
 
         _framework.Update += OnFrameworkUpdate;
     }
 
-    /*
+    
     private ulong CopyFromCharacterDetour(CharacterSetupContainer* thisPtr, Character* source, CharacterSetupContainer.CopyFlags flags) {
         try {
-            
             return _copyFromCharacterHook.Original(thisPtr, source, flags);
         } finally {
             try {
-                LivePose.Log.Warning($"Copy Character: {source->ObjectIndex} -> {thisPtr->OwnerObject->ObjectIndex}");
-                OnCopyActor(source, thisPtr->OwnerObject);
+                if(_configService.Configuration.Posing.CopyPoseToBrio) {
+                    LivePose.Log.Warning($"Copy Character: {source->ObjectIndex} -> {thisPtr->OwnerObject->ObjectIndex}");
+                    OnCopyActor(source, thisPtr->OwnerObject);
+                }
             } catch(Exception ex) {
                 LivePose.Log.Error(ex, "Error handling OnCopyActor");
             }
         }
     }
-    */
+    
 
     private void OnCopyActor(Character* source, Character* destination) {
         if(source == null || source->ObjectIndex >= 200) return;
@@ -125,31 +127,48 @@ public unsafe class GPoseService : IDisposable
 
         var json = JsonSerializer.Serialize(pose);
 
+        Transform? transform = null;
+
+        var sourceChr = (Character*) sourceCharacter.Address;
+        if(sourceChr->DrawObject != null) {
+            transform = new Transform() {
+                Position = sourceChr->DrawObject->Position,
+                Rotation = sourceChr->DrawObject->Rotation,
+                Scale = sourceChr->DrawObject->Scale
+            };
+        }
+        
+
         var destObjectIndex = destObj.ObjectIndex;
         _framework.RunOnTick(() => {
-            TrySetPose(destObjectIndex, json);
+            TrySetPose(destObjectIndex, json, transform);
         }, delayTicks: 60);
         
     }
 
     private static Random _random = new Random();
     
-    private void TrySetPose(int objIndex, string json, int total = 0, int success = 0) {
-        if(success > 2) return;
+    private void TrySetPose(int objIndex, string json, Transform? transform, int total = 0) {
         if(total > 100) return;
         _framework.RunOnTick(() => {
-            var fadeAddon = _gameGui.GetAddonByName("FadeMiddle");
-            if(fadeAddon == null || !fadeAddon.IsVisible) {
-                var obj = _objectTable[objIndex];
-                if(obj == null) return;
-                LivePose.Log.Debug("Send Pose to Brio");
-                var s = _brioService.SetPose(obj, json);
-                TrySetPose(objIndex, json, total++, success = s ? success + 1 : success);
-            } else {
-                TrySetPose(objIndex, json, total++, success);
+            if(!_brioService.IsValidGposeSession()) {
+                TrySetPose(objIndex, json, transform, total++);
+                return;
             }
-            
-        }, delayTicks: 5 + _random.Next(0, 10));
+
+            var obj = _objectTable[objIndex];
+            if(obj == null) return;
+            LivePose.Log.Debug($"Freeze Character#{objIndex}");
+            _brioService.FreezeActor(obj);
+            _framework.RunOnTick(() => {
+                LivePose.Log.Debug($"Send Pose to Brio for Character#{objIndex}");
+                _brioService.SetPose(_objectTable[objIndex], json);
+                if(transform != null) {
+                    LivePose.Log.Debug($"Set Model Transforms for Character#{objIndex}");
+                    _brioService.SetModelTransform(_objectTable[objIndex], transform);
+                }
+            }, delayTicks: 60);
+        }, delayTicks: 10);
     }
     
 
