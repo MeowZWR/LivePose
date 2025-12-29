@@ -7,7 +7,9 @@ using LivePose.Capabilities.Actor;
 using LivePose.Entities;
 using System;
 using System.Collections.Generic;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Lumina.Excel.Sheets;
+using Companion = FFXIVClientStructs.FFXIV.Client.Game.Character.Companion;
 
 namespace LivePose.Game.Actor;
 
@@ -70,6 +72,17 @@ public unsafe class ActionTimelineService : IDisposable
     private void CalculateAndApplyOverallSpeedDetour(TimelineContainer* a1)
     {
         _calculateAndApplyOverallSpeedHook.Original(a1);
+        if(a1->OwnerObject->ObjectKind == ObjectKind.Companion) {
+            var companion = (Companion*)a1->OwnerObject;
+            var owner = companion->Owner;
+            if(owner == null) return;
+            if(!_entityManager.TryGetEntity(&owner->Character, out var ownerEntity)) return;
+            if(!ownerEntity.TryGetCapability<ActionTimelineCapability>(out var ownerAct)) return;
+            if(!ownerAct.MinionSpeedMultiplierOverride.HasValue) return;
+            a1->OverallSpeed = ownerAct.MinionSpeedMultiplierOverride.Value;
+            return;
+        }
+        
         if(!freezeableTimelines.Contains(a1->TimelineSequencer.TimelineIds[0])) return;
         if(!_entityManager.TryGetEntity(a1->OwnerObject, out var entity)) return;
         if(!entity.TryGetCapability<ActionTimelineCapability>(out var atc)) return;

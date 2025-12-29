@@ -28,9 +28,9 @@ public class UIManager : IDisposable
     private readonly PosingTransformWindow _overlayTransformWindow;
     private readonly PosingGraphicalWindow _graphicalWindow;
     private readonly DebugWindow _debugWindow;
-
+    private readonly SavedPoseWindow _savedPoseWindow;
+    
     private readonly ITextureProvider _textureProvider;
-    private readonly IToastGui _toastGui;
 
     private readonly WindowSystem _windowSystem;
 
@@ -55,14 +55,14 @@ public class UIManager : IDisposable
             GPoseService gPoseService,
             ConfigurationService configurationService,
             ITextureProvider textureProvider,
-            IToastGui toast,
             SettingsWindow settingsWindow,
             LibraryWindow libraryWindow,
             PosingOverlayWindow overlayWindow,
             PosingOverlayToolbarWindow overlayToolbarWindow,
             PosingTransformWindow overlayTransformWindow,
             PosingGraphicalWindow graphicalWindow,
-            DebugWindow debugWindow
+            DebugWindow debugWindow,
+            SavedPoseWindow savedPoseWindow
         )
     {
         Instance = this;
@@ -71,7 +71,6 @@ public class UIManager : IDisposable
         _gPoseService = gPoseService;
         _configurationService = configurationService;
         _textureProvider = textureProvider;
-        _toastGui = toast;
         
         _settingsWindow = settingsWindow;
         _libraryWindow = libraryWindow;
@@ -80,6 +79,7 @@ public class UIManager : IDisposable
         _overlayTransformWindow = overlayTransformWindow;
         _graphicalWindow = graphicalWindow;
         _debugWindow = debugWindow;
+        _savedPoseWindow = savedPoseWindow;
 
         _windowSystem = new(LivePose.Name);
         
@@ -90,6 +90,7 @@ public class UIManager : IDisposable
         _windowSystem.AddWindow(_overlayTransformWindow);
         _windowSystem.AddWindow(_graphicalWindow);
         _windowSystem.AddWindow(_debugWindow);
+        _windowSystem.AddWindow(_savedPoseWindow);
 
         _pluginInterface.UiBuilder.Draw += DrawUI;
         
@@ -107,11 +108,6 @@ public class UIManager : IDisposable
     public void ShowSettingsWindow()
     {
         _settingsWindow.IsOpen = true;
-    }
-    
-    public void NotifyError(string message)
-    {
-        _toastGui.ShowError(message);
     }
     
     public void ToggleSettingsWindow() => _settingsWindow.IsOpen = !_settingsWindow.IsOpen;

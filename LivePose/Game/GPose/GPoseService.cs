@@ -229,9 +229,10 @@ public unsafe class GPoseService : IDisposable
     {
         _framework.Update -= OnFrameworkUpdate;
         
+        
         _enterGPoseHook.Dispose();
         _exitGPoseHook.Dispose();
-        // _copyFromCharacterHook.Dispose();
+        _copyFromCharacterHook.Dispose();
 
         GC.SuppressFinalize(this);
     }

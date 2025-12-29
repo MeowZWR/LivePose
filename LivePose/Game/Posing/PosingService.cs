@@ -110,8 +110,8 @@ public static class PosingExtensions
     {
         PosingOperation.Translate => ImGuizmoOperation.Translate,
         PosingOperation.Rotate => ImGuizmoOperation.Rotate,
-        PosingOperation.Scale => ImGuizmoOperation.Scale,
-        PosingOperation.Universal => ImGuizmoOperation.Translate | ImGuizmoOperation.Rotate | ImGuizmoOperation.Scale,
+        PosingOperation.Scale => ImGuizmoOperation.Scale | ImGuizmoOperation.Scaleu,
+        PosingOperation.Universal => ImGuizmoOperation.Translate | ImGuizmoOperation.Rotate | ImGuizmoOperation.Scale | ImGuizmoOperation.Scaleu,
         _ => ImGuizmoOperation.Rotate
     };
 }

@@ -193,7 +193,9 @@ public class IpcService : IDisposable
         }
 
         data.AnimationSpeedMultiplier = timelineCapability.SpeedMultiplierOverride;
+        data.MinionAnimationSpeedMultiplier = timelineCapability.MinionSpeedMultiplierOverride;
         data.Frozen = timelineCapability.SpeedMultiplierOverride == 0;
+        data.MinionLock = skeletonPosingCapability.MinionLock;
 
         if(data.Frozen) {
             unsafe {
@@ -278,7 +280,18 @@ public class IpcService : IDisposable
                     timelineCapability.ResetOverallSpeedOverride();
                 }
             }
+
+            if(livePoseData.MinionLock != null) {
+                skeletonPosingCapability.LockMinionPosition(livePoseData.MinionLock);
+            } else {
+                skeletonPosingCapability.UnlockMinionPosition();
+            }
             
+            if(livePoseData.MinionAnimationSpeedMultiplier != null && !livePoseData.MinionAnimationSpeedMultiplier.Value.IsApproximatelySame(1)) {
+                timelineCapability.SetMinionSpeedOverride(livePoseData.MinionAnimationSpeedMultiplier.Value);
+            } else {
+                timelineCapability.ResetMinionSpeedOverride();
+            }
         }, delayTicks: 1);
     }
 

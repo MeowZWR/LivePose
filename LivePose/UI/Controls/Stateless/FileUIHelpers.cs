@@ -127,7 +127,7 @@ public class FileUIHelpers
             {
                 if(LivePose.TryGetService<IpcService>(out var ipcService)) {
                     var poseInfo = ipcService.DeserializePose(livePose.Data);
-                    capability.SkeletonPosing.PoseInfo = poseInfo.Clone(asExpression ? capability.SkeletonPosing.FilterFaceBones : capability.SkeletonPosing.FilterNonFaceBones);
+                    capability.SkeletonPosing.PoseInfo = poseInfo.Clone(asExpression ? capability.SkeletonPosing.FilterFaceBones : capability.SkeletonPosing.FilterBodyBones);
                     if(capability.GameObject.ObjectIndex == 0) {
                         if(LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
                             service.SetPlayerPoseTag();
