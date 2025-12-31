@@ -140,9 +140,8 @@ public class ActionTimelineCapability(IFramework framework, ActorEntity parent) 
         await framework.RunOnTick(() => {
             unsafe {
                 ResetTimeline(Character.Native()->DrawObject);
-                if(NativeCharacter->CompanionObject != null) {
-                    ResetTimeline(NativeCharacter->CompanionObject->DrawObject);
-                }
+                var minion = Character.GetMinionBase();
+                if(minion != null) ResetTimeline((DrawObject*)minion);
             }
         }, delayTicks: 4);
 

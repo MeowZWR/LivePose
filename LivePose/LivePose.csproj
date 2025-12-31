@@ -11,10 +11,6 @@
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 		<Version>0.0.0.3</Version>
         <AssemblyName>LivePose</AssemblyName>
-
-        <!-- TODO: Remove -->
-        <Is2025 Condition="$([System.DateTime]::UtcNow.Year) == 2025">true</Is2025>
-        <NoWarn Condition="'$(Is2025)' == 'true'">MSB3277</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
