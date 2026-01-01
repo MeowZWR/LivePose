@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using LivePose.Config;
 using LivePose.Core;
 using LivePose.IPC;
@@ -269,7 +270,7 @@ namespace LivePose.Capabilities.Posing
 
         public unsafe void ApplyMinionPose() {
             var chr = (Character*)Character.Address;
-            var minionObj = chr->CompanionObject;
+            var minionObj = Character.GetMinion();
             ApplyMinionPose(minionObj == null ? 0 : minionObj->BaseId);
         }
         
@@ -330,7 +331,7 @@ namespace LivePose.Capabilities.Posing
                 var currentUpperBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(1);
                 var currentFacePose =  chr->Timeline.TimelineSequencer.GetSlotTimeline(2);
                 
-                var minionObj = chr->CompanionObject;
+                var minionObj = Character.GetMinion();
                 var minion = 0U;
                 if(minionObj != null) {
                     minion = minionObj->BaseId;
@@ -398,7 +399,7 @@ namespace LivePose.Capabilities.Posing
             if(Character.CurrentMinion == null) return;
             var chr = (Character*)Character.Address;
             if(chr == null) return;
-            var min = chr->CompanionObject;
+            var min = Character.GetMinion();
             if(min == null) return;
             if(min->DrawObject == null) return;
             
@@ -417,7 +418,7 @@ namespace LivePose.Capabilities.Posing
             if(Character.CurrentMinion == null) return;
             var chr = (Character*)Character.Address;
             if(chr == null) return;
-            var min = chr->CompanionObject;
+            var min = Character.GetMinion();
             if(min == null) return;
             var companion = _dataManager.GetExcelSheet<Companion>().GetRowOrDefault(min->BaseId);
             if(companion == null) return;
@@ -429,9 +430,8 @@ namespace LivePose.Capabilities.Posing
         private unsafe void UpdateMinionLock() {
             if(MinionLock == null) return;
             var t = MinionLock.Value;
-            var chr = (Character*)Character.Address;
-            if(chr == null) return;
-            var min = chr->CompanionObject;
+            
+            var min = Character.GetMinion();
             if(min == null) return;
 
             min->SetPosition(t.Position.X, t.Position.Y, t.Position.Z);

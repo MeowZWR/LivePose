@@ -12,6 +12,7 @@ using StructsBattleCharacter = FFXIVClientStructs.FFXIV.Client.Game.Character.Ba
 using StructsCharacter = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
 using StructsCharacterBase = FFXIVClientStructs.FFXIV.Client.Graphics.Scene.CharacterBase;
 using StructsDrawDataContainer = FFXIVClientStructs.FFXIV.Client.Game.Character.DrawDataContainer;
+using StructsCompanion = FFXIVClientStructs.FFXIV.Client.Game.Character.Companion;
 
 public static class CharacterExtensions
 {
@@ -126,6 +127,12 @@ public static class CharacterExtensions
         var ornament = go.Native()->OrnamentData.OrnamentObject;
         if(ornament == null) return null;
         return (BrioCharacterBase*)ornament->DrawObject;
+    }
+
+    public static unsafe StructsCompanion* GetMinion(this ICharacter go) {
+        var n = go.Native();
+        if(n == null) return null;
+        return n->CompanionData.CompanionObject;
     }
     
     public static unsafe BrioCharacterBase* GetMinionBase(this ICharacter go) {

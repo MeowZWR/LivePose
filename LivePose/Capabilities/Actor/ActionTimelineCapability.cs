@@ -17,7 +17,7 @@ public class ActionTimelineCapability(IFramework framework, ActorEntity parent) 
     public unsafe float MinionSpeedMultiplier {
         get {
             if(MinionSpeedMultiplierOverride != null) return MinionSpeedMultiplierOverride.Value;
-            var chr = NativeCharacter->CompanionObject;
+            var chr = Character.GetMinion();
             if(chr == null) return 1;
             return chr->Timeline.OverallSpeed;
         }
@@ -69,7 +69,7 @@ public class ActionTimelineCapability(IFramework framework, ActorEntity parent) 
             return;
         }
 
-        var chr = NativeCharacter->CompanionObject;
+        var chr = Character.GetMinion();
         if(chr == null) return;
         
         speed = Math.Clamp(speed, -2, 2);
