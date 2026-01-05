@@ -40,6 +40,8 @@ public class PosingOverlayToolbarWindow : Window
     private readonly TimelineIdentification _timelineIdentification;
     private readonly IObjectTable _objectTable;
     private readonly IDataManager _dataManager;
+    private readonly HeelsService _heelsService;
+    private readonly SavedPoseWindow _savedPoseWindow;
     
     private readonly BoneSearchControl _boneSearchControl = new();
 
@@ -48,7 +50,7 @@ public class PosingOverlayToolbarWindow : Window
 
     private const string _boneFilterPopupName = "livepose_bone_filter_popup";
 
-    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow, ICondition conditions, TimelineIdentification timelineIdentification, IObjectTable objectTable, IDataManager dataManager) : base($"{LivePose.Name} 叠加层###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
+    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow, ICondition conditions, TimelineIdentification timelineIdentification, IObjectTable objectTable, IDataManager dataManager, HeelsService heelsService, SavedPoseWindow savedPoseWindow) : base($"{LivePose.Name} 叠加层###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
     {
         Namespace = "livepose_posing_overlay_toolbar_namespace";
 
@@ -63,6 +65,8 @@ public class PosingOverlayToolbarWindow : Window
         _timelineIdentification = timelineIdentification;
         _objectTable = objectTable;
         _dataManager = dataManager;
+        _heelsService = heelsService;
+        _savedPoseWindow = savedPoseWindow;
 
         TitleBarButtons =
         [
@@ -134,21 +138,7 @@ public class PosingOverlayToolbarWindow : Window
             return;
         
         DrawButtons(posing);
-
-
-        
-        
-        
-        if(_entityManager.TryGetCapabilityFromSelectedEntity<ActionTimelineCapability>(out var timelineCapability)) {
-            
-        }
-        
-        
         DrawBoneFilterPopup();
-        
-        
-        
-        
     }
 
     public override void PostDraw()
@@ -282,10 +272,17 @@ public class PosingOverlayToolbarWindow : Window
         if(ImGui.IsItemHovered())
             ImGui.SetTooltip("骨骼过滤");
 
+        
         ImGui.SameLine();
+        using(ImRaii.PushFont(UiBuilder.IconFont))
+        {
+            if(ImGui.Button($"{FontAwesomeIcon.Search.ToIconString()}###bone_search", new Vector2(buttonOperationSize)))
+                ImGui.OpenPopup("overlay_bone_search_popup");
+        }
+        if(ImGui.IsItemHovered())
+            ImGui.SetTooltip("Bone Search");
 
-        PosingEditorCommon.DrawMirrorModeSelect(posing, new Vector2(buttonOperationSize));
-
+        
         ImGui.SameLine();
 
         var bone = posing.Selected.Match(
@@ -334,7 +331,7 @@ public class PosingOverlayToolbarWindow : Window
         {
             using(ImRaii.PushColor(ImGuiCol.Button, ThemeManager.CurrentTheme.Accent.AccentColor, enabled))
             {
-                if(ImGui.Button($"IK###bone_ik", new Vector2(buttonOperationSize)))
+                if(ImGui.Button($"IK###bone_ik", new Vector2(buttonSize, buttonOperationSize)))
                     ImGui.OpenPopup("overlay_bone_ik");
             }
         }
@@ -345,7 +342,7 @@ public class PosingOverlayToolbarWindow : Window
         
         
         using(ImRaii.Disabled(!posing.SkeletonPosing.PoseInfo.HasIKStacks)) {
-            if(ImGui.Button($"IK###clear_ik", new Vector2(buttonOperationSize))) {
+            if(ImGui.Button($"IK###clear_ik", new Vector2(buttonSize, buttonOperationSize))) {
                 var pose = new PoseFile();
                 posing.SkeletonPosing.ExportSkeletonPose(pose);
                 foreach(var p in pose.Bones.Keys) {
@@ -378,20 +375,10 @@ public class PosingOverlayToolbarWindow : Window
                 ImGui.TextDisabled("禁用所有骨骼的反向动力学，同时保持它们当前的位置。");
             }
            
-
         ImGui.SameLine();
-        using(ImRaii.PushFont(UiBuilder.IconFont))
-        {
-            if(ImGui.Button($"{FontAwesomeIcon.Search.ToIconString()}###bone_search", new Vector2(buttonOperationSize)))
-                ImGui.OpenPopup("overlay_bone_search_popup");
-        }
-        if(ImGui.IsItemHovered())
-            ImGui.SetTooltip("骨骼搜索");
-
+        PosingEditorCommon.DrawMirrorModeSelect(posing, new Vector2(buttonSize, buttonOperationSize));
+        
         if(_entityManager.TryGetCapabilityFromSelectedEntity<ActionTimelineCapability>(out var timelineCapability)) {
-            ImGui.SameLine();
-
-
 
             using(ImRaii.PushColor(ImGuiCol.Text, timelineCapability.SpeedMultiplierOverride != null ? UIConstants.ToggleButtonActive : UIConstants.ToggleButtonInactive)) 
             using(ImRaii.PushFont(UiBuilder.IconFont)) {
@@ -403,7 +390,35 @@ public class PosingOverlayToolbarWindow : Window
             if(ImGui.IsItemHovered())
                 ImGui.SetTooltip($"动画速度控制");
         }
+        
+        ImGui.SameLine();
+        
+        using (ImRaii.Disabled(posing.SkeletonPosing.ActiveMinion == 0))
+        using(ImRaii.PushColor(ImGuiCol.Text, posing.SkeletonPosing.MinionLock != null ? UIConstants.ToggleButtonActive : UIConstants.ToggleButtonInactive)) 
+        using(ImRaii.PushFont(UiBuilder.IconFont)) {
+            if(ImGui.Button($"{FontAwesomeIcon.Paw.ToIconString()}###minion_control_button", new Vector2(buttonOperationSize))) {
+                ImGui.OpenPopup("minion_control_popup");
+            }
+        }
 
+
+        if(ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip($"Minion Control");
+        
+                
+        ImGui.SameLine();
+        ImGui.Dummy(new Vector2(buttonOperationSize));
+        
+        ImGui.SameLine();
+        
+        using(ImRaii.PushFont(UiBuilder.IconFont)) {
+            if(ImGui.Button($"{FontAwesomeIcon.FolderTree.ToIconString()}###open_saved_poses", new Vector2(buttonOperationSize)))
+                _savedPoseWindow.Toggle();
+        }
+        
+        if(ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip($"Saved Poses");
+        
         ImGui.Separator();
 
         ImGui.Dummy(new Vector2(buttonOperationSize));
@@ -441,13 +456,13 @@ public class PosingOverlayToolbarWindow : Window
 
         using(ImRaii.PushFont(UiBuilder.IconFont))
         {
-            using(ImRaii.Disabled(!posing.HasOverride(posing.SkeletonPosing.FilterNonFaceBones)))
+            using(ImRaii.Disabled(!posing.HasOverride(posing.SkeletonPosing.FilterBodyBones)))
             {
                 if(ImGui.Button($"{FontAwesomeIcon.Undo.ToIconString()}###reset_body_pose", new Vector2(buttonSize))) {
                     posing.Snapshot(false, reconcile: false);
-                    posing.SkeletonPosing.PoseInfo.Clear(posing.SkeletonPosing.FilterNonFaceBones);
-                    if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
-                        heelsService.SetPlayerPoseTag();
+                    posing.SkeletonPosing.PoseInfo.Clear(posing.SkeletonPosing.FilterBodyBones);
+                    if(posing.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                        _heelsService.SetPlayerPoseTag();
                     }
                 }
                 
@@ -472,8 +487,8 @@ public class PosingOverlayToolbarWindow : Window
                 if(ImGui.Button($"{FontAwesomeIcon.Undo.ToIconString()}###reset_face_pose", new Vector2(buttonSize))) {
                     posing.Snapshot(false, reconcile: false);
                     posing.SkeletonPosing.PoseInfo.Clear(posing.SkeletonPosing.FilterFaceBones);
-                    if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
-                        heelsService.SetPlayerPoseTag();
+                    if(posing.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                        _heelsService.SetPlayerPoseTag();
                     }
                 }
                 
@@ -499,8 +514,8 @@ public class PosingOverlayToolbarWindow : Window
                 if(ImGui.Button($"{FontAwesomeIcon.Undo.ToIconString()}###reset_minion_pose", new Vector2(buttonSize))) {
                     posing.Snapshot(false, reconcile: false);
                     posing.SkeletonPosing.PoseInfo.Clear(b => b.Slot == PoseInfoSlot.Minion);
-                    if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var heelsService) && heelsService.IsAvailable) {
-                        heelsService.SetPlayerPoseTag();
+                    if(posing.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                        _heelsService.SetPlayerPoseTag();
                     }
                 }
                 
@@ -523,8 +538,8 @@ public class PosingOverlayToolbarWindow : Window
             {
                 if(ImGui.Button($"{FontAwesomeIcon.Save.ToIconString()}###save_character_config", new Vector2(buttonSize))) {
                     posing.SkeletonPosing.SaveCharacterConfiguration();
-                    if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
-                        service.SetPlayerPoseTag();
+                    if(posing.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                        _heelsService.SetPlayerPoseTag();
                     }
                 }
                     
@@ -547,8 +562,8 @@ public class PosingOverlayToolbarWindow : Window
             {
                 if(ImGui.Button($"{FontAwesomeIcon.IdBadge.ToIconString()}###load_character_config", new Vector2(buttonSize))) {
                     posing.SkeletonPosing.LoadCharacterConfiguration();
-                    if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
-                        service.SetPlayerPoseTag();
+                    if(posing.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                        _heelsService.SetPlayerPoseTag();
                     }
                 }
             }
@@ -576,8 +591,8 @@ public class PosingOverlayToolbarWindow : Window
                     posing.SkeletonPosing.BodyPoses.Clear();
                     posing.SkeletonPosing.FacePoses.Clear();
                     posing.SkeletonPosing.PoseInfo = new PoseInfo();
-                    if(posing.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
-                        service.SetPlayerPoseTag();
+                    if(posing.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                        _heelsService.SetPlayerPoseTag();
                     }
                 }
                 
@@ -676,16 +691,16 @@ public class PosingOverlayToolbarWindow : Window
                 if(timelineCapability.SpeedMultiplierOverride is null) {
                     if(ImBrio.Button("Freeze", FontAwesomeIcon.Snowflake, new Vector2(250, 24) * ImGuiHelpers.GlobalScale)) {
                         timelineCapability.SetOverallSpeedOverride(0);
-                        if(timelineCapability.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
-                            service.SetPlayerPoseTag();
+                        if(timelineCapability.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                            _heelsService.SetPlayerPoseTag();
                         }
                     }
                 } else {
                     if(ImBrio.Button("Reset", FontAwesomeIcon.Undo, new Vector2(250, 24) * ImGuiHelpers.GlobalScale)) {
                         timelineCapability.ResetOverallSpeedOverride();
                     
-                        if(timelineCapability.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
-                            service.SetPlayerPoseTag();
+                        if(timelineCapability.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                            _heelsService.SetPlayerPoseTag();
                         }
                     }
                 }
@@ -698,10 +713,67 @@ public class PosingOverlayToolbarWindow : Window
                     } else {
                         timelineCapability.SetOverallSpeedOverride(v / 100f);
                     }
-                    if(timelineCapability.GameObject.ObjectIndex == 0 && LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
-                        service.SetPlayerPoseTag();
+                    if(timelineCapability.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                        _heelsService.SetPlayerPoseTag();
                     }
                 }
+            }
+        }
+
+        using(var popup = ImRaii.Popup("minion_control_popup")) {
+            if(popup.Success) {
+                if(posing.SkeletonPosing.MinionLock == null) {
+                    if(ImBrio.Button("Freeze Position", FontAwesomeIcon.Snowflake, new Vector2(250, 24) * ImGuiHelpers.GlobalScale)) {
+                        posing.SkeletonPosing.LockMinionPosition();
+                        if(posing.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                            _heelsService.SetPlayerPoseTag();
+                        }
+                    }
+                } else {
+                    if(ImBrio.Button("Unfreeze Position", FontAwesomeIcon.Snowflake, new Vector2(250, 24) * ImGuiHelpers.GlobalScale)) {
+                        posing.SkeletonPosing.UnlockMinionPosition();
+                        if(posing.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                            _heelsService.SetPlayerPoseTag();
+                        }
+                    }
+                }
+
+                if(timelineCapability != null) {
+                    if(timelineCapability.MinionSpeedMultiplierOverride is null) {
+                        if(ImBrio.Button("Freeze Animation", FontAwesomeIcon.Snowflake, new Vector2(250, 24) * ImGuiHelpers.GlobalScale)) {
+                            timelineCapability.SetMinionSpeedOverride(0);
+                            if(timelineCapability.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                                _heelsService.SetPlayerPoseTag();
+                            }
+                        }
+                    } else {
+                        if(ImBrio.Button("Reset Animation", FontAwesomeIcon.Undo, new Vector2(250, 24) * ImGuiHelpers.GlobalScale)) {
+                            timelineCapability.ResetMinionSpeedOverride();
+                    
+                            if(timelineCapability.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                                _heelsService.SetPlayerPoseTag();
+                            }
+                        }
+                    }
+
+                    var v = (int) MathF.Round((timelineCapability.MinionSpeedMultiplierOverride ?? 1f) * 100);
+                    ImGui.SetNextItemWidth(ImGui.GetItemRectSize().X);
+                    if(ImGui.SliderInt("##speed", ref v, -200, 200, "%d%%")) {
+                        if(v == 100) {
+                            timelineCapability.ResetMinionSpeedOverride();
+                        } else {
+                            timelineCapability.SetMinionSpeedOverride(v / 100f);
+                        }
+                        if(timelineCapability.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                            _heelsService.SetPlayerPoseTag();
+                        }
+                    }
+                    
+                    
+                }
+                
+                
+                
             }
         }
     }

@@ -16,7 +16,6 @@ public class DalamudServices
     [PluginService] public IObjectTable ObjectTable { get; private set; } = null!;
     [PluginService] public IDataManager DataManager { get; private set; } = null!;
     [PluginService] public ICommandManager CommandManager { get; private set; } = null!;
-    [PluginService] public IToastGui ToastGui { get; private set; } = null!;
     [PluginService] public ITargetManager TargetManager { get; private set; } = null!;
     [PluginService] public ITextureProvider TextureProvider { get; private set; } = null!;
     [PluginService] public IPluginLog Log { get; private set; } = null!;

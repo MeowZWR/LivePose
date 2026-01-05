@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Common.Lua;
 using Lumina.Excel.Sheets;
 
 namespace LivePose.Resources;
@@ -7,6 +8,16 @@ namespace LivePose.Resources;
 
 public class TimelineIdentification {
 
+    private class IdentificationDictionary<T> : Dictionary<T, string> where T : notnull {
+        public void Copy(T source, params T[] targets) {
+            if(TryGetValue(source, out var value)) {
+                foreach(var target in targets) {
+                    TryAdd(target, value);
+                }
+            }
+        }
+    }
+    
     private IDataManager _dataManager;
     
     public TimelineIdentification(IDataManager dataManager) {
@@ -52,6 +63,23 @@ public class TimelineIdentification {
         basePoses.TryAdd(15, "Walking Right");
         basePoses.TryAdd(16, "Walking Backward");
         
+        // Running
+        basePoses.TryAdd(22, "Running Forward");
+        basePoses.TryAdd(23, "Running Left");
+        basePoses.TryAdd(24, "Running Right");
+        basePoses.TryAdd(25, "Running Start");
+        basePoses.TryAdd(26, "Running Start [BR]");
+        basePoses.TryAdd(27, "Running Start [BL]");
+        
+        // Other
+        basePoses.TryAdd(73, "Dead");
+
+
+        basePoses.TryAdd(3165, "Kneeling Down");
+        basePoses.TryAdd(3166, "Kneeling Down [M]");
+        basePoses.TryAdd(3167, "Kneeling Down [H]");
+        basePoses.TryAdd(3168, "Standing on Tip Toes");
+        basePoses.TryAdd(3186, "Target Same Height");
         
         facialExpressions.TryAdd(0, "No Expression");
         foreach(var emote in dataManager.GetExcelSheet<Emote>()) {
@@ -59,15 +87,27 @@ public class TimelineIdentification {
                 facialExpressions.TryAdd(emote.ActionTimeline[0].RowId, emote.Name.ExtractText());
                 continue;
             }
-            
-            basePoses.TryAdd(emote.ActionTimeline[0].RowId, emote.Name.ExtractText());
+
+
+            foreach(var tl in emote.ActionTimeline) {
+                if (tl.RowId == 0 || !tl.IsValid) continue;
+                
+                if(tl.Value.Stance == 0) {
+                    basePoses.TryAdd(tl.RowId, emote.Name.ExtractText());
+                } else if(tl.Value.Stance == 1) {
+                    upperBody.TryAdd(tl.RowId, emote.Name.ExtractText());
+                }
+            }
         }
+
+        
     }
     
     
-    private readonly Dictionary<uint, string> facialExpressions = [];
-    private readonly Dictionary<uint, string> basePoses = [];
-    private readonly Dictionary<uint, string> upperBody = [];
+    
+    private readonly IdentificationDictionary<uint> facialExpressions = [];
+    private readonly IdentificationDictionary<uint> basePoses = [];
+    private readonly IdentificationDictionary<uint> upperBody = [];
     
     public string GetExpressionName(ushort timeline) {
         if(facialExpressions.TryGetValue(timeline, out var name)) return name;

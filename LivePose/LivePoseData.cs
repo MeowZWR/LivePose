@@ -125,7 +125,9 @@ public class LivePoseCharacterData {
     public bool ShouldSerializeCursedPose() => CursedPose != null;
     public bool ShouldSerializeAnimationState() => AnimationState.Count > 0;
     public bool ShouldSerializeAnimationSpeedMultiplier() => AnimationSpeedMultiplier != null;
+    public bool ShouldSerializeMinionAnimationSpeedMultiplier() => MinionAnimationSpeedMultiplier != null;
     public bool ShouldSerializeMinionPoses() => MinionPoses.Count > 0;
+    public bool ShouldSerializeMinionLock() => MinionLock != null;
     
     // public Dictionary<uint, Dictionary<BonePoseInfoId, List<BonePoseData>>> BodyPoses = [];
 
@@ -133,7 +135,9 @@ public class LivePoseCharacterData {
     public List<LivePoseCacheEntry> FacePoses = [];
     public List<LivePoseMinionEntry> MinionPoses = [];
     public bool Frozen = false;
+    public Transform? MinionLock;
     public float? AnimationSpeedMultiplier;
+    public float? MinionAnimationSpeedMultiplier;
     public List<AnimationState> AnimationState = [];
     
     

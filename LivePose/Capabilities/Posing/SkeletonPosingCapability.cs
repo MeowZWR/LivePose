@@ -11,8 +11,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using LivePose.Config;
+using LivePose.Core;
 using LivePose.IPC;
+using Companion = Lumina.Excel.Sheets.Companion;
 
 namespace LivePose.Capabilities.Posing
 {
@@ -25,6 +28,7 @@ namespace LivePose.Capabilities.Posing
         private readonly HeelsService _heelsService;
         private readonly ConfigurationService _configurationService;
         private readonly IpcService _ipcService;
+        private readonly IDataManager _dataManager;
         
         public Skeleton? CharacterSkeleton { get; private set; }
         public Skeleton? MainHandSkeleton { get; private set; }
@@ -48,8 +52,9 @@ namespace LivePose.Capabilities.Posing
         private readonly List<Action<Bone, BonePoseInfo>> _transitiveActions = [];
 
         public uint ActiveMinion = 0;
+        public Transform? MinionLock { get; private set; }
 
-        public SkeletonPosingCapability(ActorEntity parent, SkeletonService skeletonService, PosingService posingService, HeelsService heelsService, IFramework framework, ConfigurationService configurationService, IpcService ipcService) : base(parent)
+        public SkeletonPosingCapability(ActorEntity parent, SkeletonService skeletonService, PosingService posingService, HeelsService heelsService, IFramework framework, ConfigurationService configurationService, IpcService ipcService, IDataManager dataManager) : base(parent)
         {
             _skeletonService = skeletonService;
             _posingService = posingService;
@@ -57,6 +62,7 @@ namespace LivePose.Capabilities.Posing
             _heelsService = heelsService;
             _configurationService = configurationService;
             _ipcService = ipcService;
+            _dataManager = dataManager;
             
             _skeletonService.SkeletonUpdateStart += OnSkeletonUpdateStart;
             _skeletonService.SkeletonUpdateEnd += OnSkeletonUpdateEnd;
@@ -264,7 +270,7 @@ namespace LivePose.Capabilities.Posing
 
         public unsafe void ApplyMinionPose() {
             var chr = (Character*)Character.Address;
-            var minionObj = chr->CompanionObject;
+            var minionObj = Character.GetMinion();
             ApplyMinionPose(minionObj == null ? 0 : minionObj->BaseId);
         }
         
@@ -299,7 +305,7 @@ namespace LivePose.Capabilities.Posing
                 }
                     
                 if(ActiveBodyTimelines != (0, 0)) {
-                    var bodyPose = PoseInfo.Clone(FilterNonFaceBones);
+                    var bodyPose = PoseInfo.Clone(FilterBodyBones);
                     if(bodyPose.IsOverridden()) {
                         BodyPoses[ActiveBodyTimelines] = bodyPose;
                     } else {
@@ -325,7 +331,7 @@ namespace LivePose.Capabilities.Posing
                 var currentUpperBodyPose = chr->Timeline.TimelineSequencer.GetSlotTimeline(1);
                 var currentFacePose =  chr->Timeline.TimelineSequencer.GetSlotTimeline(2);
                 
-                var minionObj = chr->CompanionObject;
+                var minionObj = Character.GetMinion();
                 var minion = 0U;
                 if(minionObj != null) {
                     minion = minionObj->BaseId;
@@ -372,9 +378,9 @@ namespace LivePose.Capabilities.Posing
             return bone?.IsFaceBone ?? false;
         }
         
-        public bool FilterFaceBones(BonePoseInfoId obj) => IsFaceBone(obj);
+        public bool FilterFaceBones(BonePoseInfoId obj) => obj.Slot is PoseInfoSlot.Character && IsFaceBone(obj);
 
-        public bool FilterNonFaceBones(BonePoseInfoId obj) => !IsFaceBone(obj);
+        public bool FilterBodyBones(BonePoseInfoId obj) => obj.Slot is not PoseInfoSlot.Minion && !IsFaceBone(obj);
 
         private void OnSkeletonUpdateStart()
         {
@@ -384,6 +390,61 @@ namespace LivePose.Capabilities.Posing
         private void OnSkeletonUpdateEnd()
         {
             _transitiveActions.Clear();
+
+            UpdateMinionLock();
+        }
+        
+        public unsafe void LockMinionPosition(Transform? transform = null) {
+            UnlockMinionPosition();
+            if(Character.CurrentMinion == null) return;
+            var chr = (Character*)Character.Address;
+            if(chr == null) return;
+            var min = Character.GetMinion();
+            if(min == null) return;
+            if(min->DrawObject == null) return;
+            
+            MinionLock = transform ?? new Transform() {
+                Position = min->DrawObject->Position,
+                Rotation = min->DrawObject->Rotation,
+                Scale = min->DrawObject->Scale
+            };
+            
+            UpdateMinionLock();
+        }
+
+        public unsafe void UnlockMinionPosition() {
+            if(MinionLock == null) return;
+            MinionLock = null;
+            if(Character.CurrentMinion == null) return;
+            var chr = (Character*)Character.Address;
+            if(chr == null) return;
+            var min = Character.GetMinion();
+            if(min == null) return;
+            var companion = _dataManager.GetExcelSheet<Companion>().GetRowOrDefault(min->BaseId);
+            if(companion == null) return;
+            // TODO: Switch to ClientStructs
+            // min->Behaviour = (CompanionBehaviour) companion.Value.Behavior.RowId;
+            *(uint*)((byte*)min + 0x2394) = companion.Value.Behavior.RowId;
+        }
+        
+        private unsafe void UpdateMinionLock() {
+            if(MinionLock == null) return;
+            var t = MinionLock.Value;
+            
+            var min = Character.GetMinion();
+            if(min == null) return;
+
+            min->SetPosition(t.Position.X, t.Position.Y, t.Position.Z);
+            min->SetRotation(t.Rotation.ToEuler().Y);
+            
+            // TODO: Switch to ClientStructs
+            // min->Behaviour = CompanionBehaviour.Stationary;
+            *(uint*)((byte*)min + 0x2394) = 3;
+            if(min->DrawObject == null) return;
+
+            min->DrawObject->Position = t.Position;
+            min->DrawObject->Rotation = t.Rotation;
+            min->DrawObject->Scale = t.Scale;
         }
 
         public void LoadCharacterConfiguration() {
