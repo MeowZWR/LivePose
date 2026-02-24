@@ -6,12 +6,15 @@ using LivePose.Entities.Actor;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Numerics;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using LivePose.Core;
+using LivePose.Entities;
+using LivePose.Entities.Core;
 using LivePose.IPC;
 
 namespace LivePose.Capabilities.Actor;
 
-public class ActionTimelineCapability(IFramework framework, ActorEntity parent) : ActorCharacterCapability(parent) {
+public class ActionTimelineCapability(IFramework framework, ActorEntity parent, EntityManager entityManager, IObjectTable objectTable, IChatGui chatGui) : ActorCharacterCapability(parent) {
     public unsafe float SpeedMultiplier => SpeedMultiplierOverride ?? Character.Native()->Timeline.OverallSpeed;
 
     public unsafe float MinionSpeedMultiplier {
@@ -27,8 +30,26 @@ public class ActionTimelineCapability(IFramework framework, ActorEntity parent) 
 
     public float? SpeedMultiplierOverride {
         get {
-            if(field == null) return null;
+            if(SpeedMatch != null) {
+                var matchTarget = objectTable.SearchByEntityId(SpeedMatch.Value);
+                if(matchTarget is IPlayerCharacter playerCharacter && entityManager.TryGetCapabilityFromEntity(new EntityId(playerCharacter), out ActionTimelineCapability matchTimeline)) {
+                    if(matchTimeline.SpeedMatch == null) {
+                        if(field == null || !field.Value.IsApproximatelySame(matchTimeline.SpeedMultiplier)) {
+                            if(LivePose.TryGetService<HeelsService>(out var service) && service.IsAvailable) {
+                                service.SetPlayerPoseTag();
+                            }
+                            
+                            field = matchTimeline.SpeedMultiplier;
+                        }
+                        
+                        return matchTimeline.SpeedMultiplier;
+                    }
+                }
+                
+                SpeedMatch = null;
+            }
             
+            if(field == null) return null;
             if(SpeedMultiplierPosition == null || Vector3.DistanceSquared(SpeedMultiplierPosition.Value, Character.Position) > 0.01f) {
                 ResetOverallSpeedOverride();
                 if(GameObject.ObjectIndex == 0) {
@@ -50,6 +71,8 @@ public class ActionTimelineCapability(IFramework framework, ActorEntity parent) 
         private set;
     }
     
+
+    public uint? SpeedMatch { get; set; }
 
     public unsafe void SetOverallSpeedOverride(float speed) {
         if(speed.IsApproximatelySame(1)) {

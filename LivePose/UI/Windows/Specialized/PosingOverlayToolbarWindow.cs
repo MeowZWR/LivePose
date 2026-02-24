@@ -17,9 +17,12 @@ using LivePose.UI.Theming;
 using OneOf.Types;
 using System.Numerics;
 using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using LivePose.Capabilities.Actor;
+using LivePose.Entities.Core;
 using LivePose.Files;
 using LivePose.IPC;
 using LivePose.Resources;
@@ -42,6 +45,7 @@ public class PosingOverlayToolbarWindow : Window
     private readonly IDataManager _dataManager;
     private readonly HeelsService _heelsService;
     private readonly SavedPoseWindow _savedPoseWindow;
+    private readonly ITargetManager _targetManager;
     
     private readonly BoneSearchControl _boneSearchControl = new();
 
@@ -50,7 +54,7 @@ public class PosingOverlayToolbarWindow : Window
 
     private const string _boneFilterPopupName = "livepose_bone_filter_popup";
 
-    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow, ICondition conditions, TimelineIdentification timelineIdentification, IObjectTable objectTable, IDataManager dataManager, HeelsService heelsService, SavedPoseWindow savedPoseWindow) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
+    public PosingOverlayToolbarWindow(PosingOverlayWindow overlayWindow, EntityManager entityManager, PosingTransformWindow overlayTransformWindow, PosingService posingService, ConfigurationService configurationService, IClientState clientState, SettingsWindow settingsWindow, PosingGraphicalWindow graphicalWindow, ICondition conditions, TimelineIdentification timelineIdentification, IObjectTable objectTable, IDataManager dataManager, HeelsService heelsService, SavedPoseWindow savedPoseWindow, ITargetManager targetManager) : base($"{LivePose.Name} OVERLAY###livepose_posing_overlay_toolbar_window", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
     {
         Namespace = "livepose_posing_overlay_toolbar_namespace";
 
@@ -67,6 +71,7 @@ public class PosingOverlayToolbarWindow : Window
         _dataManager = dataManager;
         _heelsService = heelsService;
         _savedPoseWindow = savedPoseWindow;
+        _targetManager = targetManager;
 
         TitleBarButtons =
         [
@@ -394,7 +399,7 @@ public class PosingOverlayToolbarWindow : Window
         
         if(_entityManager.TryGetCapabilityFromSelectedEntity<ActionTimelineCapability>(out var timelineCapability)) {
 
-            using(ImRaii.PushColor(ImGuiCol.Text, timelineCapability.SpeedMultiplierOverride != null ? UIConstants.ToggleButtonActive : UIConstants.ToggleButtonInactive)) 
+            using(ImRaii.PushColor(ImGuiCol.Text, timelineCapability.SpeedMultiplierOverride != null || timelineCapability.SpeedMatch != null ? UIConstants.ToggleButtonActive : UIConstants.ToggleButtonInactive)) 
             using(ImRaii.PushFont(UiBuilder.IconFont)) {
                 if(ImGui.Button($"{FontAwesomeIcon.TachometerAlt.ToIconString()}###animation_speed_button", new Vector2(buttonOperationSize))) {
                     ImGui.OpenPopup("animation_speed_editor");
@@ -702,33 +707,63 @@ public class PosingOverlayToolbarWindow : Window
 
         using(var popup = ImRaii.Popup("animation_speed_editor")) {
             if(popup.Success && timelineCapability != null) {
-                if(timelineCapability.SpeedMultiplierOverride is null) {
-                    if(ImBrio.Button("Freeze", FontAwesomeIcon.Snowflake, new Vector2(250, 24) * ImGuiHelpers.GlobalScale)) {
-                        timelineCapability.SetOverallSpeedOverride(0);
-                        if(timelineCapability.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
-                            _heelsService.SetPlayerPoseTag();
+
+                using(ImRaii.Disabled(timelineCapability.SpeedMatch != null)) {
+                    if(timelineCapability.SpeedMultiplierOverride is null) {
+                        if(ImBrio.Button("Freeze", FontAwesomeIcon.Snowflake, new Vector2(250, 24) * ImGuiHelpers.GlobalScale)) {
+                            timelineCapability.SetOverallSpeedOverride(0);
+                            if(timelineCapability.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                                _heelsService.SetPlayerPoseTag();
+                            }
+                        }
+                    } else {
+                        if(ImBrio.Button("Reset", FontAwesomeIcon.Undo, new Vector2(250, 24) * ImGuiHelpers.GlobalScale)) {
+                            timelineCapability.ResetOverallSpeedOverride();
+                    
+                            if(timelineCapability.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                                _heelsService.SetPlayerPoseTag();
+                            }
                         }
                     }
-                } else {
-                    if(ImBrio.Button("Reset", FontAwesomeIcon.Undo, new Vector2(250, 24) * ImGuiHelpers.GlobalScale)) {
-                        timelineCapability.ResetOverallSpeedOverride();
-                    
+
+                    var v = (int) MathF.Round((timelineCapability.SpeedMultiplierOverride ?? 1f) * 100);
+                    ImGui.SetNextItemWidth(ImGui.GetItemRectSize().X);
+                    if(ImGui.SliderInt("##speed", ref v, -200, 200, "%d%%")) {
+                        if(v == 100) {
+                            timelineCapability.ResetOverallSpeedOverride();
+                        } else {
+                            timelineCapability.SetOverallSpeedOverride(v / 100f);
+                        }
                         if(timelineCapability.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
                             _heelsService.SetPlayerPoseTag();
                         }
                     }
                 }
 
-                var v = (int) MathF.Round((timelineCapability.SpeedMultiplierOverride ?? 1f) * 100);
-                ImGui.SetNextItemWidth(ImGui.GetItemRectSize().X);
-                if(ImGui.SliderInt("##speed", ref v, -200, 200, "%d%%")) {
-                    if(v == 100) {
-                        timelineCapability.ResetOverallSpeedOverride();
-                    } else {
-                        timelineCapability.SetOverallSpeedOverride(v / 100f);
+                if(timelineCapability.SpeedMatch != null) {
+                    var matchPlayer = _objectTable.SearchByEntityId(timelineCapability.SpeedMatch.Value);
+                    
+                    if(matchPlayer is IPlayerCharacter targetPlayer) {
+                        if(_entityManager.TryGetCapabilityFromEntity(new EntityId(targetPlayer), out ActionTimelineCapability targetTimeline)) {
+
+                            using(ImRaii.PushColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ButtonActive))) {
+                                if(ImBrio.Button($"Match {targetPlayer.Name.TextValue} ({(targetTimeline.SpeedMultiplierOverride ?? 1) * 100f}%)", FontAwesomeIcon.PersonHarassing, new Vector2(250, 24) * ImGuiHelpers.GlobalScale, centerTest: true)) {
+                                    timelineCapability.SpeedMatch = null;
+                                    if(timelineCapability.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
+                                        _heelsService.SetPlayerPoseTag();
+                                    }
+                                }
+                            }
+                        }
                     }
-                    if(timelineCapability.GameObject.ObjectIndex == 0 && _heelsService.IsAvailable) {
-                        _heelsService.SetPlayerPoseTag();
+                } else {
+                    var target = _targetManager.SoftTarget ?? _targetManager.Target;
+                    if(target is IPlayerCharacter targetPlayer) {
+                        if(_entityManager.TryGetCapabilityFromEntity(new EntityId(targetPlayer), out ActionTimelineCapability targetTimeline)) {
+                            if(ImBrio.Button($"Match {targetPlayer.Name.TextValue} ({(targetTimeline.SpeedMultiplierOverride ?? 1) * 100f}%)", FontAwesomeIcon.PersonHarassing, new Vector2(250, 24) * ImGuiHelpers.GlobalScale, centerTest: true)) {
+                                timelineCapability.SpeedMatch = targetPlayer.EntityId;
+                            }
+                        }
                     }
                 }
             }
