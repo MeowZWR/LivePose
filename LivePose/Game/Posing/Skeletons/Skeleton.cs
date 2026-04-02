@@ -63,14 +63,7 @@ public class Skeleton : IDisposable
                     {
 
                         var rawBone = pose->Skeleton->Bones[boneIdx];
-                        string boneName;
-                        try {
-                            if(rawBone.Name.StringAndFlag == null || ((ulong)rawBone.Name.StringAndFlag & 1) == 0) continue;
-                            boneName = rawBone.Name.String!;
-                        } catch {
-                            continue;
-                        }
-                        
+                        var boneName = rawBone.Name.String!;
                         var parentIndex = pose->Skeleton->ParentIndices[boneIdx];
 
                         var bone = newPartial.GetOrCreateBone(boneIdx);
