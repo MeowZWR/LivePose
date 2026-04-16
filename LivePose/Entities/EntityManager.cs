@@ -234,6 +234,13 @@ public unsafe partial class EntityManager(IServiceProvider serviceProvider, Conf
         return false;
     }
 
+    public bool TryGetCapabilityFromEntity<T>(EntityId entityId, [NotNullWhen(true)] out T capability, bool considerChildren = false, bool considerParents = true) where T : Capability {
+        capability = null;
+        if(!TryGetEntity(entityId, out var entity)) return false;
+        entity.TryGetCapability(out capability, considerChildren, considerParents);
+        return capability != null;
+    }
+
     public bool TryGetCapabilitiesFromSelectedEntities<T>([MaybeNullWhen(false)] out IEnumerable<T> capabilities, bool considerChildren = false, bool considerParents = true) where T : Capability
     {
         var results = new List<T>();
