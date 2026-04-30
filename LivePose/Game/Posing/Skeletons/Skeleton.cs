@@ -63,7 +63,12 @@ public class Skeleton : IDisposable
                     {
 
                         var rawBone = pose->Skeleton->Bones[boneIdx];
-                        var boneName = rawBone.Name.String!;
+                        string boneName;
+                        try {
+                            boneName = rawBone.Name.String ?? $"invalid-bone-{boneIdx}";
+                        } catch {
+                            boneName = $"invalid-bone-{boneIdx}";
+                        }
                         var parentIndex = pose->Skeleton->ParentIndices[boneIdx];
 
                         var bone = newPartial.GetOrCreateBone(boneIdx);

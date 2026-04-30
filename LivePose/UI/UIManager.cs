@@ -39,7 +39,7 @@ public class UIManager : IDisposable
         AddedWindowFlags = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking
     };
 
-    private readonly List<Window> _hiddenWindows = [];
+    private readonly List<IWindow> _hiddenWindows = [];
 
     public ITextureProvider TextureProvider => _textureProvider;
 
