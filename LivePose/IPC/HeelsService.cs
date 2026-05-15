@@ -144,9 +144,15 @@ public class HeelsService : BrioIPC {
         LivePose.Log.Verbose($"Decompressed Tag: {value?.Length ?? 0} -> {decompressedData.Length}");
         _ipcService.SetPose((ushort)objectIndex, decompressedData);
     }
+    
+    public void ClearPlayerPoseTag() {
+        cancellationTokenSource?.Cancel();
+        _removeTag?.InvokeAction(0, TagName);
+    }
 
     public override void Dispose() {
         cancellationTokenSource?.Cancel();
         _tagChanged?.Unsubscribe(OnTagChanged);
+        ClearPlayerPoseTag();
     }
 }
