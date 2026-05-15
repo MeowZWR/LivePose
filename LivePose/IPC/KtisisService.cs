@@ -45,7 +45,7 @@ public class KtisisService : BrioIPC {
 			try {
 				this._framework.RunOnTick(() => {
 					this._brioService.ResetPose(this._objectTable[index]);
-				}, delayTicks: 10);
+				});
 			} catch(Exception ex) {
 				LivePose.Log.Warning(ex, $"Error handling PosingChanged for Index {index}");
 			}
