@@ -7,6 +7,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using LivePose.Config;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin;
@@ -29,6 +30,8 @@ public unsafe class GPoseService : IDisposable
 
     public delegate void OnGPoseStateDelegate(bool newState);
     public event OnGPoseStateDelegate? OnGPoseStateChange;
+
+	public List<int> PosedIndexes = []; // list of touched objecttable indexes to be reset if Ktisis posing is enabled
 
     public bool FakeGPose
     {
@@ -143,7 +146,8 @@ public unsafe class GPoseService : IDisposable
         _framework.RunOnTick(() => {
             TrySetPose(destObjectIndex, json, transform);
         }, delayTicks: 60);
-        
+
+		this.PosedIndexes.Add(destObjectIndex);
     }
 
     private static Random _random = new Random();
@@ -197,6 +201,7 @@ public unsafe class GPoseService : IDisposable
     {
         _exitGPoseHook.Original.Invoke(uiModule);
         HandleGPoseStateChange(false);
+		this.PosedIndexes.Clear();
     }
 
     private bool EnteringGPoseDetour(UIModule* uiModule)
@@ -233,6 +238,7 @@ public unsafe class GPoseService : IDisposable
         _enterGPoseHook.Dispose();
         _exitGPoseHook.Dispose();
         _copyFromCharacterHook.Dispose();
+		this.PosedIndexes.Clear();
 
         GC.SuppressFinalize(this);
     }
