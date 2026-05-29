@@ -128,6 +128,7 @@ public class LivePose : IDisposable {
         serviceCollection.AddSingleton<IpcService>();
         serviceCollection.AddSingleton<HeelsService>();
         serviceCollection.AddSingleton<BrioService>();
+		serviceCollection.AddSingleton<KtisisService>();
 
         // Entity
         serviceCollection.AddSingleton<EntityManager>();
