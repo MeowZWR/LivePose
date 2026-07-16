@@ -49,7 +49,7 @@ public static class CharacterExtensions
         {
             ActorEquipSlot.MainHand => StructsDrawDataContainer.WeaponSlot.MainHand,
             ActorEquipSlot.OffHand => StructsDrawDataContainer.WeaponSlot.OffHand,
-            ActorEquipSlot.Prop => StructsDrawDataContainer.WeaponSlot.Unk,
+            ActorEquipSlot.Prop => StructsDrawDataContainer.WeaponSlot.System,
             _ => throw new Exception("Invalid weapon slot")
         };
 
